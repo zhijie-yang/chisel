@@ -352,6 +352,40 @@ var extractTests = []extractTest{{
 		},
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
+}, {
+	summary: "Hard link must be created if specified in the tarball",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		testutil.Reg(0644, "./file1.txt", "text for file1.txt"),
+		testutil.Hln(0644, "./file2.txt", "./file1.txt"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/*.txt": []deb.ExtractInfo{{
+				Path: "/*.txt",
+			}},
+		},
+	},
+	result: map[string]string{
+		"/file1.txt": "file 0644 e926a7fb",
+		"/file2.txt": "file 0644 e926a7fb",
+	},
+	notCreated: []string{},
+}, {
+	summary: "Dangling hard link must raise an error",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		// testutil.Reg(0644, "./file1.txt", "text for file1.txt"),
+		testutil.Hln(0644, "./file2.txt", "./file1.txt"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/*.txt": []deb.ExtractInfo{{
+				Path: "/*.txt",
+			}},
+		},
+	},
+	error: `cannot extract from package "test-package": the target file does not exist: .*/file1.txt`,
 }}
 
 func (s *S) TestExtract(c *C) {
