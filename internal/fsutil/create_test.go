@@ -15,10 +15,11 @@ import (
 )
 
 type createTest struct {
-	options fsutil.CreateOptions
-	hackdir func(c *C, dir string)
-	result  map[string]string
-	error   string
+	options            fsutil.CreateOptions
+	hackdir            func(c *C, dir string)
+	hackLinkPathPrefix func(c *C, dir string, options *fsutil.CreateOptions)
+	result             map[string]string
+	error              string
 }
 
 var createTests = []createTest{{
@@ -93,6 +94,24 @@ var createTests = []createTest{{
 		// mode is not updated.
 		"/foo": "file 0666 d67e2e94",
 	},
+}, {
+	options: fsutil.CreateOptions{
+		Path:        "dir/link-to-file",
+		Link:        "file",
+		Mode:        0644,
+		MakeParents: true,
+	},
+	hackdir: func(c *C, dir string) {
+		c.Assert(os.WriteFile(filepath.Join(dir, "file"), []byte("data"), 0644), IsNil)
+	},
+	hackLinkPathPrefix: func(c *C, dir string, options *fsutil.CreateOptions) {
+		options.Link = filepath.Join(dir, options.Link)
+	},
+	result: map[string]string{
+		"/file":             "file 0644 3a6eb079",
+		"/dir/":             "dir 0755",
+		"/dir/link-to-file": "file 0644 3a6eb079",
+	},
 }}
 
 func (s *S) TestCreate(c *C) {
@@ -110,6 +129,9 @@ func (s *S) TestCreate(c *C) {
 		dir := c.MkDir()
 		if test.hackdir != nil {
 			test.hackdir(c, dir)
+		}
+		if test.hackLinkPathPrefix != nil {
+			test.hackLinkPathPrefix(c, dir, &test.options)
 		}
 		options := test.options
 		options.Path = filepath.Join(dir, options.Path)
