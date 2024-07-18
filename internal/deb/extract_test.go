@@ -353,39 +353,58 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Hard link must be created if specified in the tarball",
+	summary: "Hard link is extracted",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		testutil.Reg(0644, "./file1.txt", "text for file1.txt"),
-		testutil.Hln(0644, "./file2.txt", "./file1.txt"),
+		testutil.Reg(0644, "./file.txt", "text for file.txt"),
+		testutil.Hln(0644, "./link-to-file.txt", "./file.txt"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
-			"/*.txt": []deb.ExtractInfo{{
-				Path: "/*.txt",
+			"/**": []deb.ExtractInfo{{
+				Path: "/**",
 			}},
 		},
 	},
 	result: map[string]string{
-		"/file1.txt": "file 0644 e926a7fb",
-		"/file2.txt": "file 0644 e926a7fb",
+		"/file.txt":         "file 0644 e940b71b",
+		"/link-to-file.txt": "file 0644 e940b71b",
 	},
 	notCreated: []string{},
 }, {
-	summary: "Dangling hard link must raise an error",
+	summary: "Dangling hard link",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		// testutil.Reg(0644, "./file1.txt", "text for file1.txt"),
-		testutil.Hln(0644, "./file2.txt", "./file1.txt"),
+		// The file.txt is left out to create a dangling hard link link-to-file.txt
+		testutil.Hln(0644, "./link-to-file.txt", "./file.txt"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
-			"/*.txt": []deb.ExtractInfo{{
-				Path: "/*.txt",
+			"/**": []deb.ExtractInfo{{
+				Path: "/**",
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": the target file does not exist: .*/file1.txt`,
+	error: `cannot extract from package "test-package": the target file does not exist: .*\/file.txt`,
+}, {
+	summary: "Hard link to symlink",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		testutil.Lnk(0644, "./symlink-to-file.txt", "./file.txt"),
+		testutil.Hln(0644, "./link-to-file.txt", "./symlink-to-file.txt"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/**": []deb.ExtractInfo{{
+				Path: "/**",
+			}},
+		},
+	},
+	result: map[string]string{
+		"/link-to-file.txt":    "symlink ./file.txt",
+		"/symlink-to-file.txt": "symlink ./file.txt",
+	},
+	notCreated: []string{},
 }}
 
 func (s *S) TestExtract(c *C) {
