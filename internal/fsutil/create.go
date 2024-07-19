@@ -132,7 +132,7 @@ func createHardLink(o *CreateOptions) error {
 	debugf("Creating hard link: %s => %s", o.Path, o.Link)
 	targetInfo, err := os.Lstat(o.Link)
 	if err != nil && os.IsNotExist(err) {
-		return fmt.Errorf("the target file does not exist: %s", o.Link)
+		return fmt.Errorf("link target does not exist: %s", o.Link)
 	} else if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func createHardLink(o *CreateOptions) error {
 		if os.SameFile(targetInfo, linkInfo) {
 			return nil
 		}
-		return fmt.Errorf("the link already exists: %s", o.Path)
+		return fmt.Errorf("path %s already exists", o.Path)
 	} else if !os.IsNotExist(err) {
 		return err
 	}

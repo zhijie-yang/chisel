@@ -353,30 +353,10 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Hard link is extracted",
-	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
-		testutil.Dir(0755, "./"),
-		testutil.Reg(0644, "./file.txt", "text for file.txt"),
-		testutil.Hln(0644, "./link-to-file.txt", "./file.txt"),
-	}),
-	options: deb.ExtractOptions{
-		Extract: map[string][]deb.ExtractInfo{
-			"/**": []deb.ExtractInfo{{
-				Path: "/**",
-			}},
-		},
-	},
-	result: map[string]string{
-		"/file.txt":         "file 0644 e940b71b",
-		"/link-to-file.txt": "file 0644 e940b71b",
-	},
-	notCreated: []string{},
-}, {
 	summary: "Dangling hard link",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		// The file.txt is left out to create a dangling hard link link-to-file.txt
-		testutil.Hln(0644, "./link-to-file.txt", "./file.txt"),
+		testutil.Hln(0644, "./link", "./non-existing-target"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -385,13 +365,13 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": the target file does not exist: .*\/file.txt`,
+	error: `cannot extract from package "test-package": link target does not exist: \/[^ ]*\/non-existing-target`,
 }, {
-	summary: "Hard link to symlink",
+	summary: "Hard link to symlink does not follow symlink",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		testutil.Lnk(0644, "./symlink-to-file.txt", "./file.txt"),
-		testutil.Hln(0644, "./link-to-symlink.txt", "./symlink-to-file.txt"),
+		testutil.Lnk(0644, "./symlink-to-file", "./file"),
+		testutil.Hln(0644, "./link-to-symlink", "./symlink-to-file"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -401,8 +381,8 @@ var extractTests = []extractTest{{
 		},
 	},
 	result: map[string]string{
-		"/link-to-symlink.txt": "symlink ./file.txt",
-		"/symlink-to-file.txt": "symlink ./file.txt",
+		"/link-to-symlink": "symlink ./file",
+		"/symlink-to-file": "symlink ./file",
 	},
 	notCreated: []string{},
 }, {
@@ -410,10 +390,9 @@ var extractTests = []extractTest{{
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Dir(0755, "./dir/"),
-		testutil.Reg(0644, "./dir/file.txt", "text for file.txt"),
-		testutil.Lnk(0644, "./symlink-to-file.txt", "./dir/file.txt"),
-		testutil.Hln(0644, "./link-to-file.txt", "./dir/file.txt"),
-		testutil.Hln(0644, "./link-to-symlink.txt", "./symlink-to-file.txt"),
+		testutil.Reg(0644, "./dir/file", "text for file"),
+		testutil.Lnk(0644, "./symlink-to-file", "./dir/file"),
+		testutil.Hln(0644, "./link-to-file", "./dir/file"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -423,11 +402,10 @@ var extractTests = []extractTest{{
 		},
 	},
 	result: map[string]string{
-		"/dir/":                "dir 0755",
-		"/dir/file.txt":        "file 0644 e940b71b",
-		"/link-to-file.txt":    "file 0644 e940b71b",
-		"/link-to-symlink.txt": "symlink ./dir/file.txt",
-		"/symlink-to-file.txt": "symlink ./dir/file.txt",
+		"/dir/":            "dir 0755",
+		"/dir/file":        "file 0644 28121945",
+		"/link-to-file":    "file 0644 28121945",
+		"/symlink-to-file": "symlink ./dir/file",
 	},
 	notCreated: []string{},
 }}
