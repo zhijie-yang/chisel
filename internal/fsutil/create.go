@@ -49,6 +49,9 @@ func Create(options *CreateOptions) (*Entry, error) {
 	switch o.Mode & fs.ModeType {
 	case 0:
 		if o.Link != "" {
+			// Creating the hard link does not occurs file reads. Therefore,
+			// its size and hash is not calculated here but in
+			// `testutil.TreeDumpEntry` for testing purpose instead.
 			err = createHardLink(o)
 		} else {
 			err = createFile(o)

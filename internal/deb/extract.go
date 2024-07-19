@@ -249,6 +249,11 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			link := tarHeader.Linkname
 			if tarHeader.Typeflag == tar.TypeLink {
 				// The hard link requires the real path of the target file.
+				// For a hard link, we assume:
+				// - the target file is already created (the target file should
+				//   exist before the hard link in a valid tarball)
+				// - the hard link is identified in `fsutil.CreateOptions` as a
+				//   regular file but with a non-empty `Link` field.
 				link = filepath.Join(options.TargetDir, link)
 			}
 

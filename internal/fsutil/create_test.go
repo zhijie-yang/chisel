@@ -94,6 +94,7 @@ var createTests = []createTest{{
 		"/foo": "file 0666 d67e2e94",
 	},
 }, {
+	// Create a hard link to `file`
 	options: fsutil.CreateOptions{
 		Path:        "dir/link-to-file",
 		Link:        "file",
