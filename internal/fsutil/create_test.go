@@ -15,11 +15,10 @@ import (
 )
 
 type createTest struct {
-	options            fsutil.CreateOptions
-	hackdir            func(c *C, dir string)
-	hackLinkPathPrefix func(c *C, dir string, options *fsutil.CreateOptions)
-	result             map[string]string
-	error              string
+	options fsutil.CreateOptions
+	hackopt func(c *C, dir string, options *fsutil.CreateOptions)
+	result  map[string]string
+	error   string
 }
 
 var createTests = []createTest{{
@@ -73,7 +72,7 @@ var createTests = []createTest{{
 		Path: "foo",
 		Mode: fs.ModeDir | 0775,
 	},
-	hackdir: func(c *C, dir string) {
+	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
 		c.Assert(os.Mkdir(filepath.Join(dir, "foo/"), fs.ModeDir|0765), IsNil)
 	},
 	result: map[string]string{
@@ -87,7 +86,7 @@ var createTests = []createTest{{
 		Mode: 0644,
 		Data: bytes.NewBufferString("changed"),
 	},
-	hackdir: func(c *C, dir string) {
+	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
 		c.Assert(os.WriteFile(filepath.Join(dir, "foo"), []byte("data"), 0666), IsNil)
 	},
 	result: map[string]string{
@@ -101,10 +100,8 @@ var createTests = []createTest{{
 		Mode:        0644,
 		MakeParents: true,
 	},
-	hackdir: func(c *C, dir string) {
+	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
 		c.Assert(os.WriteFile(filepath.Join(dir, "file"), []byte("data"), 0644), IsNil)
-	},
-	hackLinkPathPrefix: func(c *C, dir string, options *fsutil.CreateOptions) {
 		options.Link = filepath.Join(dir, options.Link)
 	},
 	result: map[string]string{
@@ -127,11 +124,8 @@ func (s *S) TestCreate(c *C) {
 		}
 		c.Logf("Options: %v", test.options)
 		dir := c.MkDir()
-		if test.hackdir != nil {
-			test.hackdir(c, dir)
-		}
-		if test.hackLinkPathPrefix != nil {
-			test.hackLinkPathPrefix(c, dir, &test.options)
+		if test.hackopt != nil {
+			test.hackopt(c, dir, &test.options)
 		}
 		options := test.options
 		options.Path = filepath.Join(dir, options.Path)
