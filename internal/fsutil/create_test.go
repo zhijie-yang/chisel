@@ -2,6 +2,7 @@ package fsutil_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -193,17 +194,23 @@ func (s *S) TestCreate(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(testutil.TreeDump(dir), DeepEquals, test.result)
 
-		// [fsutil.Create] does not return information about parent directories
-		// created implicitly. We only check for the requested path.
-		if entry.Link != "" && entry.Mode&fs.ModeSymlink == 0 {
-			// Entry is a hardlink.
+		isHardLink := entry.Link != "" && entry.Mode&fs.ModeSymlink == 0
+		// Special case for hard links: use the same file info to compare the
+		// path and the link.
+		if isHardLink {
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)
 			c.Assert(err, IsNil)
 			os.SameFile(pathInfo, linkInfo)
+		}
+		// [fsutil.Create] does not return information about parent directories
+		// created implicitly. We only check for the requested path.
+		entry.Path = strings.TrimPrefix(entry.Path, dir)
+		if isHardLink {
+			result := fmt.Sprintf("hard link %#o %s", entry.Mode.Perm(), entry.Link)
+			c.Assert(testutil.TreeDumpEntry(entry), DeepEquals, result)
 		} else {
-			entry.Path = strings.TrimPrefix(entry.Path, dir)
 			// Add the slashes that TreeDump adds to the path.
 			slashPath := "/" + test.options.Path
 			if test.options.Mode.IsDir() {
