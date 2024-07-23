@@ -32,8 +32,7 @@ type Entry struct {
 }
 
 // Create creates a filesystem entry according to the provided options and returns
-// the information about the created entry. Create treats a regular file with a
-// non-empty `Link` field as a hard link.
+// the information about the created entry.
 func Create(options *CreateOptions) (*Entry, error) {
 	rp := &readerProxy{inner: options.Data, h: sha256.New()}
 	// Use the proxy instead of the raw Reader.
