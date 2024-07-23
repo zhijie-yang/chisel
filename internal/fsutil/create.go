@@ -15,6 +15,8 @@ type CreateOptions struct {
 	Path string
 	Mode fs.FileMode
 	Data io.Reader
+	// If Link is set and the symlink flag is set in Mode, a symlink is
+	// created. Otherwise, a hard link is created.
 	Link string
 	// If MakeParents is true, missing parent directories of Path are
 	// created with permissions 0755.
@@ -50,9 +52,8 @@ func Create(options *CreateOptions) (*Entry, error) {
 	switch o.Mode & fs.ModeType {
 	case 0:
 		if o.Link != "" {
-			// Creating the hard link does not occurs file reads. Therefore,
-			// its size and hash is not calculated here but in
-			// `testutil.TreeDumpEntry` for testing purpose instead.
+			// Creating the hard link does not occurs file reads.
+			// Therefore, its size and hash is not calculated here.
 			err = createHardLink(o)
 		} else {
 			err = createFile(o)

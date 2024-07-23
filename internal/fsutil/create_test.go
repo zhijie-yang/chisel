@@ -2,7 +2,6 @@ package fsutil_test
 
 import (
 	"bytes"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -24,7 +23,7 @@ type createTest struct {
 }
 
 var createTests = []createTest{{
-	summary: "Create a file under a new directory",
+	summary: "Create a file and its parent directory",
 	options: fsutil.CreateOptions{
 		Path:        "foo/bar",
 		Data:        bytes.NewBufferString("data1"),
@@ -68,7 +67,7 @@ var createTests = []createTest{{
 		"/tmp/": "dir 01775",
 	},
 }, {
-	summary: "Cannot create a subdirectory without `MakeParents` set",
+	summary: "Cannot create a parent directory without MakeParents set",
 	options: fsutil.CreateOptions{
 		Path: "foo/bar",
 		Mode: fs.ModeDir | 0775,
@@ -103,7 +102,7 @@ var createTests = []createTest{{
 		"/foo": "file 0666 d67e2e94",
 	},
 }, {
-	summary: "Create a hard link under to a file",
+	summary: "Create a hard link",
 	options: fsutil.CreateOptions{
 		Path:        "dir/link-to-file",
 		Link:        "file",
@@ -179,11 +178,11 @@ func (s *S) TestCreate(c *C) {
 		}
 		c.Logf("Options: %v", test.options)
 		dir := c.MkDir()
-		if test.hackopt != nil {
-			test.hackopt(c, dir, &test.options)
-		}
 		options := test.options
 		options.Path = filepath.Join(dir, options.Path)
+		if test.hackopt != nil {
+			test.hackopt(c, dir, &options)
+		}
 		entry, err := fsutil.Create(&options)
 
 		if test.error != "" {
@@ -194,23 +193,16 @@ func (s *S) TestCreate(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(testutil.TreeDump(dir), DeepEquals, test.result)
 
-		isHardLink := entry.Link != "" && entry.Mode&fs.ModeSymlink == 0
-		// Special case for hard links: use the same file info to compare the
-		// path and the link.
-		if isHardLink {
+		// [fsutil.Create] does not return information about parent directories
+		// created implicitly. We only check for the requested path.
+		if entry.Link != "" && entry.Mode&fs.ModeSymlink == 0 {
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)
 			c.Assert(err, IsNil)
 			os.SameFile(pathInfo, linkInfo)
-		}
-		// [fsutil.Create] does not return information about parent directories
-		// created implicitly. We only check for the requested path.
-		entry.Path = strings.TrimPrefix(entry.Path, dir)
-		if isHardLink {
-			result := fmt.Sprintf("hard link %#o %s", entry.Mode.Perm(), entry.Link)
-			c.Assert(testutil.TreeDumpEntry(entry), DeepEquals, result)
 		} else {
+			entry.Path = strings.TrimPrefix(entry.Path, dir)
 			// Add the slashes that TreeDump adds to the path.
 			slashPath := "/" + test.options.Path
 			if test.options.Mode.IsDir() {
