@@ -47,7 +47,7 @@ var createTests = []createTest{{
 		"/foo/bar": "symlink ../baz",
 	},
 }, {
-	summary: "Create a subdirectory",
+	summary: "Create a directory",
 	options: fsutil.CreateOptions{
 		Path:        "foo/bar",
 		Mode:        fs.ModeDir | 0444,
@@ -196,6 +196,7 @@ func (s *S) TestCreate(c *C) {
 		// [fsutil.Create] does not return information about parent directories
 		// created implicitly. We only check for the requested path.
 		if entry.Link != "" && entry.Mode&fs.ModeSymlink == 0 {
+			// Entry is a hard link.
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)
