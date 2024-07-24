@@ -248,7 +248,7 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			// Create the entry itself.
 			link := tarHeader.Linkname
 			if tarHeader.Typeflag == tar.TypeLink {
-				// The hard link requires the real path of the target file.
+				// A hard link requires the real path of the target file.
 				link = filepath.Join(options.TargetDir, link)
 			}
 

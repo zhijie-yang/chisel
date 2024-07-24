@@ -104,7 +104,7 @@ var createTests = []createTest{{
 }, {
 	summary: "Create a hard link",
 	options: fsutil.CreateOptions{
-		Path:        "dir/link-to-file",
+		Path:        "dir/hardlink",
 		Link:        "file",
 		Mode:        0644,
 		MakeParents: true,
@@ -115,53 +115,53 @@ var createTests = []createTest{{
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
 	result: map[string]string{
-		"/file":             "file 0644 3a6eb079",
-		"/dir/":             "dir 0755",
-		"/dir/link-to-file": "file 0644 3a6eb079",
+		"/file":         "file 0644 3a6eb079",
+		"/dir/":         "dir 0755",
+		"/dir/hardlink": "file 0644 3a6eb079",
 	},
 }, {
 	summary: "Cannot create a hard link if the link target does not exist",
 	options: fsutil.CreateOptions{
-		Path:        "dir/link-to-file",
-		Link:        "file-no-exist",
+		Path:        "dir/hardlink",
+		Link:        "missing-file",
 		Mode:        0644,
 		MakeParents: true,
 	},
 	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
-	error: `link target does not exist: \/[^ ]*\/file-no-exist`,
+	error: `link target does not exist: \/[^ ]*\/missing-file`,
 }, {
 	summary: "Re-creating a duplicated hard link keeps the original link",
 	options: fsutil.CreateOptions{
-		Path:        "link-to-file",
+		Path:        "hardlink",
 		Link:        "file",
 		Mode:        0644,
 		MakeParents: true,
 	},
 	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
 		c.Assert(os.WriteFile(filepath.Join(targetDir, "file"), []byte("data"), 0644), IsNil)
-		c.Assert(os.Link(filepath.Join(targetDir, "file"), filepath.Join(targetDir, "link-to-file")), IsNil)
+		c.Assert(os.Link(filepath.Join(targetDir, "file"), filepath.Join(targetDir, "hardlink")), IsNil)
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
 	result: map[string]string{
-		"/file":         "file 0644 3a6eb079",
-		"/link-to-file": "file 0644 3a6eb079",
+		"/file":     "file 0644 3a6eb079",
+		"/hardlink": "file 0644 3a6eb079",
 	},
 }, {
 	summary: "Cannot create a hard link if the link path exists and it is not a hard link to the target",
 	options: fsutil.CreateOptions{
-		Path:        "link-to-file",
+		Path:        "hardlink",
 		Link:        "file",
 		Mode:        0644,
 		MakeParents: true,
 	},
 	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
 		c.Assert(os.WriteFile(filepath.Join(targetDir, "file"), []byte("data"), 0644), IsNil)
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "link-to-file"), []byte("data"), 0644), IsNil)
+		c.Assert(os.WriteFile(filepath.Join(targetDir, "hardlink"), []byte("data"), 0644), IsNil)
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
-	error: `path \/[^ ]*\/link-to-file already exists`,
+	error: `path \/[^ ]*\/hardlink already exists`,
 }}
 
 func (s *S) TestCreate(c *C) {
