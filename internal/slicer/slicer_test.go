@@ -1051,6 +1051,54 @@ var slicerTests = []slicerTest{{
 						content.list("/foo-bar/")
 		`,
 	},
+}, {
+	summary: "Valid same hard link in two slices in the same package",
+	slices: []setup.SliceKey{
+		{"test-package", "module1"},
+		{"test-package", "module2"}},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Reg(0644, "./dir/module1", "text for module1"),
+			testutil.Reg(0644, "./dir/module2", "text for module2"),
+			testutil.Hln(0644, "./hardlink", "./dir/file"),
+		}),
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				hardlink:
+					contents:
+						/dir/file:
+						/hardlink:
+				module1:
+					essential:
+						- test-package_hardlink
+					contents:
+						/dir/module1:
+				module2:
+					essential:
+						- test-package_hardlink
+					contents:
+						/dir/module2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":        "dir 0755",
+		"/dir/file":    "file 0644 28121945",
+		"/dir/module1": "file 0644 60f84f1a",
+		"/dir/module2": "file 0644 3a35e2c7",
+		"/hardlink":    "file 0644 28121945",
+	},
+	report: map[string]string{
+		"/dir/file":    "file 0644 28121945 {test-package_hardlink}",
+		"/dir/module1": "file 0644 60f84f1a {test-package_module1}",
+		"/dir/module2": "file 0644 3a35e2c7 {test-package_module2}",
+		"/hardlink":    "hardlink 0644 dir/file {test-package_hardlink}",
+	},
 }}
 
 var defaultChiselYaml = `
@@ -1196,13 +1244,20 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 			fsDump = fmt.Sprintf("dir %#o", fperm)
 		case fs.ModeSymlink:
 			fsDump = fmt.Sprintf("symlink %s", entry.Link)
-		case 0: // Regular
-			if entry.Size == 0 {
-				fsDump = fmt.Sprintf("file %#o empty", entry.Mode.Perm())
-			} else if entry.FinalHash != "" {
-				fsDump = fmt.Sprintf("file %#o %s %s", fperm, entry.Hash[:8], entry.FinalHash[:8])
+		case 0:
+			if entry.Link != "" {
+				// Hard link.
+				relLink := strings.TrimPrefix(entry.Link, report.Root)
+				fsDump = fmt.Sprintf("hardlink %#o %s", fperm, relLink)
 			} else {
-				fsDump = fmt.Sprintf("file %#o %s", fperm, entry.Hash[:8])
+				// Regular file.
+				if entry.Size == 0 {
+					fsDump = fmt.Sprintf("file %#o empty", entry.Mode.Perm())
+				} else if entry.FinalHash != "" {
+					fsDump = fmt.Sprintf("file %#o %s %s", fperm, entry.Hash[:8], entry.FinalHash[:8])
+				} else {
+					fsDump = fmt.Sprintf("file %#o %s", fperm, entry.Hash[:8])
+				}
 			}
 		default:
 			panic(fmt.Errorf("unknown file type %d: %s", entry.Mode.Type(), entry.Path))
