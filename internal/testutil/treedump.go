@@ -74,7 +74,12 @@ func TreeDumpEntry(entry *fsutil.Entry) string {
 		return fmt.Sprintf("dir %#o", fperm)
 	case fs.ModeSymlink:
 		return fmt.Sprintf("symlink %s", entry.Link)
-	case 0: // Regular file.
+	case 0:
+		// Hard link.
+		if entry.Link != "" {
+			return fmt.Sprintf("hard link %#o %s", fperm, entry.Link)
+		}
+		// Regular file.
 		if entry.Size == 0 {
 			return fmt.Sprintf("file %#o empty", entry.Mode.Perm())
 		} else {
