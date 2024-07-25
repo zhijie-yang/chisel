@@ -1070,20 +1070,16 @@ var slicerTests = []slicerTest{{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
 			slices:
-				hardlink:
+				module1:
 					contents:
 						/dir/file:
-						/hardlink:
-				module1:
-					essential:
-						- test-package_hardlink
-					contents:
 						/dir/module1:
+						/hardlink:
 				module2:
-					essential:
-						- test-package_hardlink
 					contents:
+						/dir/file:
 						/dir/module2:
+						/hardlink:
 		`,
 	},
 	filesystem: map[string]string{
@@ -1094,10 +1090,10 @@ var slicerTests = []slicerTest{{
 		"/hardlink":    "file 0644 28121945",
 	},
 	report: map[string]string{
-		"/dir/file":    "file 0644 28121945 {test-package_hardlink}",
+		"/dir/file":    "file 0644 28121945 {test-package_module1,test-package_module2}",
 		"/dir/module1": "file 0644 60f84f1a {test-package_module1}",
 		"/dir/module2": "file 0644 3a35e2c7 {test-package_module2}",
-		"/hardlink":    "hardlink 0644 dir/file {test-package_hardlink}",
+		"/hardlink":    "hardlink 0644 dir/file {test-package_module1,test-package_module2}",
 	},
 }}
 
