@@ -1054,15 +1054,13 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Valid same hard link in two slices in the same package",
 	slices: []setup.SliceKey{
-		{"test-package", "module1"},
-		{"test-package", "module2"}},
+		{"test-package", "slice1"},
+		{"test-package", "slice2"}},
 	pkgs: map[string][]byte{
 		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Reg(0644, "./dir/module1", "text for module1"),
-			testutil.Reg(0644, "./dir/module2", "text for module2"),
 			testutil.Hln(0644, "./hardlink", "./dir/file"),
 		}),
 	},
@@ -1070,30 +1068,24 @@ var slicerTests = []slicerTest{{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
 			slices:
-				module1:
+				slice1:
 					contents:
 						/dir/file:
-						/dir/module1:
 						/hardlink:
-				module2:
+				slice2:
 					contents:
 						/dir/file:
-						/dir/module2:
 						/hardlink:
 		`,
 	},
 	filesystem: map[string]string{
-		"/dir/":        "dir 0755",
-		"/dir/file":    "file 0644 28121945",
-		"/dir/module1": "file 0644 60f84f1a",
-		"/dir/module2": "file 0644 3a35e2c7",
-		"/hardlink":    "file 0644 28121945",
+		"/dir/":     "dir 0755",
+		"/dir/file": "file 0644 28121945",
+		"/hardlink": "file 0644 28121945",
 	},
 	report: map[string]string{
-		"/dir/file":    "file 0644 28121945 {test-package_module1,test-package_module2}",
-		"/dir/module1": "file 0644 60f84f1a {test-package_module1}",
-		"/dir/module2": "file 0644 3a35e2c7 {test-package_module2}",
-		"/hardlink":    "hardlink 0644 dir/file {test-package_module1,test-package_module2}",
+		"/dir/file": "file 0644 28121945 {test-package_slice1,test-package_slice2}",
+		"/hardlink": "hardlink 0644 /dir/file {test-package_slice1,test-package_slice2}",
 	},
 }}
 
@@ -1243,7 +1235,7 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 		case 0:
 			if entry.Link != "" {
 				// Hard link.
-				relLink := strings.TrimPrefix(entry.Link, report.Root)
+				relLink := filepath.Clean("/" + strings.TrimPrefix(entry.Link, report.Root))
 				fsDump = fmt.Sprintf("hardlink %#o %s", fperm, relLink)
 			} else {
 				// Regular file.
