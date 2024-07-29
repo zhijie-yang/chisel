@@ -77,7 +77,7 @@ func TreeDumpEntry(entry *fsutil.Entry) string {
 	case 0:
 		// Hard link.
 		if entry.Link != "" {
-			return fmt.Sprintf("hard link %#o %s", fperm, entry.Link)
+			return fmt.Sprintf("hardlink %s", entry.Link)
 		}
 		// Regular file.
 		if entry.Size == 0 {

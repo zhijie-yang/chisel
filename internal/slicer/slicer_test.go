@@ -1052,7 +1052,7 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 }, {
-	summary: "Valid same hard link in two slices in the same package",
+	summary: "Valid hard link in two slices in the same package",
 	slices: []setup.SliceKey{
 		{"test-package", "slice1"},
 		{"test-package", "slice2"}},
@@ -1085,7 +1085,7 @@ var slicerTests = []slicerTest{{
 	},
 	report: map[string]string{
 		"/dir/file": "file 0644 28121945 {test-package_slice1,test-package_slice2}",
-		"/hardlink": "hardlink 0644 /dir/file {test-package_slice1,test-package_slice2}",
+		"/hardlink": "hardlink /dir/file {test-package_slice1,test-package_slice2}",
 	},
 }}
 
@@ -1236,7 +1236,7 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 			if entry.Link != "" {
 				// Hard link.
 				relLink := filepath.Clean("/" + strings.TrimPrefix(entry.Link, report.Root))
-				fsDump = fmt.Sprintf("hardlink %#o %s", fperm, relLink)
+				fsDump = fmt.Sprintf("hardlink %s", relLink)
 			} else {
 				// Regular file.
 				if entry.Size == 0 {
