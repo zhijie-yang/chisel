@@ -32,8 +32,9 @@ type RunOptions struct {
 }
 
 type pathData struct {
-	until   setup.PathUntil
-	mutable bool
+	until    setup.PathUntil
+	mutable  bool
+	hardLink bool
 }
 
 type contentChecker struct {
@@ -43,6 +44,9 @@ type contentChecker struct {
 func (cc *contentChecker) checkMutable(path string) error {
 	if !cc.knownPaths[path].mutable {
 		return fmt.Errorf("cannot write file which is not mutable: %s", path)
+	}
+	if cc.knownPaths[path].hardLink {
+		return fmt.Errorf("cannot mutate a hard link: %s", path)
 	}
 	return nil
 }
@@ -205,7 +209,11 @@ func Run(options *RunOptions) error {
 		}
 
 		if inSliceContents {
-			data := pathData{mutable: mutable, until: until}
+			data := pathData{
+				mutable:  mutable,
+				until:    until,
+				hardLink: entry.LinkType == fsutil.TypeHardLink,
+			}
 			addKnownPath(knownPaths, relPath, data)
 		}
 		return nil
