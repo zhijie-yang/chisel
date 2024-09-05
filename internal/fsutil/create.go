@@ -22,14 +22,16 @@ type CreateOptions struct {
 	// If MakeParents is true, missing parent directories of Path are
 	// created with permissions 0755.
 	MakeParents bool
+	HardLinkId  int
 }
 
 type Entry struct {
-	Path string
-	Mode fs.FileMode
-	Hash string
-	Size int
-	Link string
+	Path       string
+	Mode       fs.FileMode
+	Hash       string
+	Size       int
+	Link       string
+	HardLinkId int
 }
 
 // Create creates a filesystem entry according to the provided options and returns
@@ -75,11 +77,12 @@ func Create(options *CreateOptions) (*Entry, error) {
 		return nil, err
 	}
 	entry := &Entry{
-		Path: o.Path,
-		Mode: s.Mode(),
-		Hash: hash,
-		Size: rp.size,
-		Link: o.Link,
+		Path:       o.Path,
+		Mode:       s.Mode(),
+		Hash:       hash,
+		Size:       rp.size,
+		Link:       o.Link,
+		HardLinkId: o.HardLinkId,
 	}
 	return entry, nil
 }

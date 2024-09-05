@@ -433,7 +433,7 @@ func (s *S) TestExtract(c *C) {
 			test.hackopt(&options)
 		}
 
-		err := deb.Extract(bytes.NewBuffer(test.pkgdata), &options)
+		err := deb.Extract(bytes.NewReader(test.pkgdata), &options)
 		if test.error != "" {
 			c.Assert(err, ErrorMatches, test.error)
 			continue
@@ -544,7 +544,7 @@ func (s *S) TestExtractCreateCallback(c *C) {
 			return nil
 		}
 
-		err := deb.Extract(bytes.NewBuffer(test.pkgdata), &options)
+		err := deb.Extract(bytes.NewReader(test.pkgdata), &options)
 		c.Assert(err, IsNil)
 
 		c.Assert(createExtractInfos, DeepEquals, test.calls)

@@ -11,13 +11,14 @@ import (
 )
 
 type ReportEntry struct {
-	Path      string
-	Mode      fs.FileMode
-	Hash      string
-	Size      int
-	Slices    map[*setup.Slice]bool
-	Link      string
-	FinalHash string
+	Path       string
+	Mode       fs.FileMode
+	Hash       string
+	Size       int
+	Slices     map[*setup.Slice]bool
+	Link       string
+	FinalHash  string
+	HardLinkId int
 }
 
 // Report holds the information about files and directories created when slicing
@@ -62,12 +63,13 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		r.Entries[relPath] = entry
 	} else {
 		r.Entries[relPath] = ReportEntry{
-			Path:   relPath,
-			Mode:   fsEntry.Mode,
-			Hash:   fsEntry.Hash,
-			Size:   fsEntry.Size,
-			Slices: map[*setup.Slice]bool{slice: true},
-			Link:   fsEntry.Link,
+			Path:       relPath,
+			Mode:       fsEntry.Mode,
+			Hash:       fsEntry.Hash,
+			Size:       fsEntry.Size,
+			Slices:     map[*setup.Slice]bool{slice: true},
+			Link:       fsEntry.Link,
+			HardLinkId: fsEntry.HardLinkId,
 		}
 	}
 	return nil

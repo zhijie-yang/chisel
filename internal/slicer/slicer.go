@@ -144,7 +144,7 @@ func Run(options *RunOptions) (*Report, error) {
 	}
 
 	// Fetch all packages, using the selection order.
-	packages := make(map[string]io.ReadCloser)
+	packages := make(map[string]io.ReadSeekCloser)
 	for _, slice := range options.Selection.Slices {
 		if packages[slice.Package] != nil {
 			continue
@@ -227,10 +227,11 @@ func Run(options *RunOptions) (*Report, error) {
 			continue
 		}
 		err := deb.Extract(reader, &deb.ExtractOptions{
-			Package:   slice.Package,
-			Extract:   extract[slice.Package],
-			TargetDir: targetDir,
-			Create:    create,
+			Package:    slice.Package,
+			Extract:    extract[slice.Package],
+			TargetDir:  targetDir,
+			StagingDir: os.TempDir(), // TODo: create a temp dir in /tmp instead of using os.TempDir()
+			Create:     create,
 		})
 		reader.Close()
 		packages[slice.Package] = nil

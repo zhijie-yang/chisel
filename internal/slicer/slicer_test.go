@@ -1085,7 +1085,70 @@ var slicerTests = []slicerTest{{
 	},
 	report: map[string]string{
 		"/dir/file": "file 0644 28121945 {test-package_slice1,test-package_slice2}",
-		"/hardlink": "hardlink /dir/file {test-package_slice1,test-package_slice2}",
+		"/hardlink": "hardlink 1 {test-package_slice1,test-package_slice2}",
+	},
+}, {
+	summary: "Empty hard link is inflated with its counterpart",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink1", "./dir/file"),
+			testutil.Hln(0644, "./hardlink2", "./dir/file"),
+		}),
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink1:
+						/hardlink2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink1": "file 0644 28121945",
+		"/hardlink2": "file 0644 28121945",
+	},
+	report: map[string]string{
+		"/hardlink1": "hardlink 1 {test-package_myslice}",
+		"/hardlink2": "hardlink 1 {test-package_myslice}",
+	},
+}, {
+	summary: "Hard link identifier distinguishes different hard links",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file1", "text for file1"),
+			testutil.Reg(0644, "./dir/file2", "text for file2"),
+			testutil.Hln(0644, "./hardlink1", "./dir/file1"),
+			testutil.Hln(0644, "./hardlink2", "./dir/file2"),
+		}),
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink1:
+						/hardlink2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink1": "file 0644 df82bbbd",
+		"/hardlink2": "file 0644 dcddda2e",
+	},
+	report: map[string]string{
+		"/hardlink1": "hardlink 1 {test-package_myslice}",
+		"/hardlink2": "hardlink 2 {test-package_myslice}",
 	},
 }}
 
@@ -1111,9 +1174,9 @@ func (a *testArchive) Options() *archive.Options {
 	return &a.options
 }
 
-func (a *testArchive) Fetch(pkg string) (io.ReadCloser, error) {
+func (a *testArchive) Fetch(pkg string) (io.ReadSeekCloser, error) {
 	if data, ok := a.pkgs[pkg]; ok {
-		return io.NopCloser(bytes.NewBuffer(data)), nil
+		return testutil.ReadSeekerNopCloser(bytes.NewReader(data)), nil
 	}
 	return nil, fmt.Errorf("attempted to open %q package", pkg)
 }
@@ -1235,8 +1298,8 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 		case 0:
 			if entry.Link != "" {
 				// Hard link.
-				relLink := filepath.Clean("/" + strings.TrimPrefix(entry.Link, report.Root))
-				fsDump = fmt.Sprintf("hardlink %s", relLink)
+				// relLink := filepath.Clean("/" + strings.TrimPrefix(entry.Link, report.Root))
+				fsDump = fmt.Sprintf("hardlink %d", entry.HardLinkId)
 			} else {
 				// Regular file.
 				if entry.Size == 0 {
