@@ -46,13 +46,7 @@ type hardLinkRevMapEntry struct {
 	inStaging  bool
 }
 
-type hardLink struct {
-	Target     string
-	Identifier int
-}
-
 type tarMetadata struct {
-	HardLinks      map[string]hardLink
 	HardLinkRevMap map[string]hardLinkRevMapEntry
 }
 
@@ -227,9 +221,10 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		if len(targetPaths) == 0 {
 			if tarHeader.Typeflag == tar.TypeReg {
 				// Extract the hard link base file to the staging directory, when
-				// 1. it is required by other hard links ()
+				// 1. it is required by other hard links (exists as a key in the HardLinkRevMap)
 				// 2. it is not part of the target paths (len(targetPaths) == 0)
-				// tarHeader.Name is used since the paths in the tarMetadata are relative
+				// In case that [len(targetPaths) > 0], the hard link base file is extracted normally.
+				// tarHeader.Name is used since the paths in the HardLinkRevMap are relative
 				if entry, ok := tarMetadata.HardLinkRevMap[tarHeader.Name]; ok {
 					targetDir = options.StagingDir
 					entry.inStaging = true
@@ -303,19 +298,23 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			link := tarHeader.Linkname
 			hardLinkId := 0
 			if tarHeader.Typeflag == tar.TypeLink {
+				// Set the [link] to the absolute path if it's a hard link
 				if entry, ok := tarMetadata.HardLinkRevMap[link]; ok {
+					// Set the [link] w.r.t. to different path prefix depending
+					// on whether the base file is in the staging directory.
 					if entry.inStaging {
-						// The hard link base file is not extracted yet.
-						// It will be extracted to the staging directory.
 						link = filepath.Join(options.StagingDir, link)
 					} else {
 						link = filepath.Join(targetDir, link)
 					}
+					// Set the hardLinkId for hard links
 					hardLinkId = int(entry.Identifier)
 				} else {
 					return fmt.Errorf("hard link target %s not found in the tarball header", tarHeader.Linkname)
 				}
 			}
+			// Set the HardLinkId to both the hard link base file,
+			// so they are symmetric in the report.
 			if entry, ok := tarMetadata.HardLinkRevMap["."+targetPath]; ok {
 				hardLinkId = int(entry.Identifier)
 			}
@@ -365,14 +364,12 @@ func parentDirs(path string) []string {
 
 func NewTarMetadata() tarMetadata {
 	return tarMetadata{
-		HardLinks:      make(map[string]hardLink),
 		HardLinkRevMap: make(map[string]hardLinkRevMapEntry),
 	}
 }
 
 func readTarMetadata(tarReader *tar.Reader) (tarMetadata, error) {
 	metadata := NewTarMetadata()
-	var hardLinks = make(map[string]string)
 	var hardLinkRevMap = make(map[string][]string)
 	for {
 		tarHeader, err := tarReader.Next()
@@ -386,31 +383,23 @@ func readTarMetadata(tarReader *tar.Reader) (tarMetadata, error) {
 		if tarHeader.Typeflag == tar.TypeLink {
 			sourcePath := tarHeader.Name
 			linkPath := tarHeader.Linkname
-			hardLinks[sourcePath] = linkPath
 			hardLinkRevMap[linkPath] = append(hardLinkRevMap[linkPath], sourcePath)
 		}
 	}
 
 	// Sort the hard link targets to ensure a deterministic HardLinkId in the report
-	sortedTargets := make([]string, 0, len(hardLinkRevMap))
-	for target, _ := range hardLinkRevMap {
-		sortedTargets = append(sortedTargets, target)
+	targets := make([]string, 0, len(hardLinkRevMap))
+	for target := range hardLinkRevMap {
+		targets = append(targets, target)
 	}
-	sort.Strings(sortedTargets)
+	sort.Strings(targets)
 
-	for idx, target := range sortedTargets {
+	for idx, target := range targets {
 		sources := hardLinkRevMap[target]
 		metadata.HardLinkRevMap[target] = hardLinkRevMapEntry{
 			Target:     sources,
 			Identifier: idx + 1,
 			inStaging:  false,
-		}
-	}
-
-	for source, target := range hardLinks {
-		metadata.HardLinks[source] = hardLink{
-			Target:     target,
-			Identifier: metadata.HardLinkRevMap[target].Identifier,
 		}
 	}
 
