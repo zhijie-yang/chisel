@@ -1213,6 +1213,37 @@ var slicerTests = []slicerTest{{
 		"/dir/file": "hardlink 1 {test-package_myslice}",
 		"/hardlink": "hardlink 1 {test-package_myslice}",
 	},
+}, {
+	summary: "Symlink is a valid hard link base file",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Lnk(0644, "./symlink", "./dir/file"),
+			testutil.Hln(0644, "./hardlink", "./symlink"),
+		}),
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink:
+						/symlink:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink": "symlink ./dir/file",
+		"/symlink":  "symlink ./dir/file",
+	},
+	report: map[string]string{
+		"/symlink":  "hardlink 1 -> symlink {test-package_myslice}",
+		"/hardlink": "hardlink 1 -> symlink {test-package_myslice}",
+	},
 }}
 
 var defaultChiselYaml = `
@@ -1357,11 +1388,15 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 		case fs.ModeDir:
 			fsDump = fmt.Sprintf("dir %#o", fperm)
 		case fs.ModeSymlink:
-			fsDump = fmt.Sprintf("symlink %s", entry.Link)
+			if entry.HardLinkId > 0 {
+				// Hard link to a symlink.
+				fsDump = fmt.Sprintf("hardlink %d -> symlink", entry.HardLinkId)
+			} else {
+				fsDump = fmt.Sprintf("symlink %s", entry.Link)
+			}
 		case 0:
 			if entry.HardLinkId > 0 {
-				// Hard link.
-				// relLink := filepath.Clean("/" + strings.TrimPrefix(entry.Link, report.Root))
+				// Hard link to a regular file.
 				fsDump = fmt.Sprintf("hardlink %d", entry.HardLinkId)
 			} else {
 				// Regular file.

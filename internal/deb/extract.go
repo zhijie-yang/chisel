@@ -98,6 +98,10 @@ func Extract(pkgReader io.ReadSeeker, options *ExtractOptions) (err error) {
 	return extractData(pkgReader, validOpts)
 }
 
+// getDataReader returns a ReadCloser for the data payload of the package.
+// Calling the Close method must happen outside of this function to prevent
+// premature closing of the underlying package reader.
+// The xz.Reader is wrapper with io.NopCloser since it does not implement the Close method.
 func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
 	arReader := ar.NewReader(pkgReader)
 	var dataReader io.ReadCloser
@@ -135,12 +139,32 @@ func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
 }
 
 func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
-	// stagingDir is the directory where the hard link base file is located,
-	// if this file is not within the target paths.
+	// stagingDir is the directory where the hard link base file, which is not
+	// listed in the pendingPaths, to be extracted.
 	stagingDir, err := os.MkdirTemp("", "chisel-staging-")
 	if err != nil {
 		return err
 	}
+	// Fist pass over the tarball to read the header of the tarball
+	// and create its metadata.
+	dataReader, err := getDataReader(pkgReader)
+	if err != nil {
+		return err
+	}
+	tarReader := tar.NewReader(dataReader)
+	tarMetadata, err := readTarMetadata(tarReader)
+	if err != nil {
+		return err
+	}
+	// Rewind back to the start of the tarball and extract the files.
+	pkgReader.Seek(0, io.SeekStart)
+	// Second pass over the tarball to extract the files.
+	dataReader, err = getDataReader(pkgReader)
+	if err != nil {
+		return err
+	}
+	defer dataReader.Close()
+
 	oldUmask := syscall.Umask(0)
 	defer func() {
 		syscall.Umask(oldUmask)
@@ -156,18 +180,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		}
 	}
 
-	// Read the metadata of the tarball to determine hard links.
-	dataReader, err := getDataReader(pkgReader)
-	if err != nil {
-		return err
-	}
-	tarReader := tar.NewReader(dataReader)
-	tarMetadata, err := readTarMetadata(tarReader)
-	if err != nil {
-		return err
-	}
-	// Rewind back to the start of the tarball and extract the files.
-	pkgReader.Seek(0, io.SeekStart)
 	// When creating a file we will iterate through its parent directories and
 	// create them with the permissions defined in the tarball.
 	//
@@ -175,11 +187,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	// before the entry for the file itself. This is the case for .deb files but
 	// not for all tarballs.
 	tarDirMode := make(map[string]fs.FileMode)
-	dataReader, err = getDataReader(pkgReader)
-	if err != nil {
-		return err
-	}
-	defer dataReader.Close()
 	tarReader = tar.NewReader(dataReader)
 	for {
 		tarHeader, err := tarReader.Next()
@@ -190,6 +197,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			return err
 		}
 
+		// targetDir is the directory where the file is extracted.
+		// It is either the options.TargetDir or the stagingDir.
 		targetDir := options.TargetDir
 		sourcePath := tarHeader.Name
 		if len(sourcePath) < 3 || sourcePath[0] != '.' || sourcePath[1] != '/' {
@@ -225,21 +234,20 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 		}
 		if len(targetPaths) == 0 {
-			if tarHeader.Typeflag == tar.TypeReg {
-				// Extract the hard link base file to the staging directory, when
-				// 1. it is required by other hard links (exists as a key in the HardLinkRevMap)
-				// 2. it is not part of the target paths (len(targetPaths) == 0)
-				// In case that [len(targetPaths) > 0], the hard link base file is extracted normally.
-				// tarHeader.Name is used since the paths in the HardLinkRevMap are relative
-				if entry, ok := tarMetadata.HardLinkRevMap[tarHeader.Name]; ok {
-					targetDir = stagingDir
-					entry.StagingPath = filepath.Join(stagingDir, tarHeader.Name)
-					tarMetadata.HardLinkRevMap[tarHeader.Name] = entry
-					targetPaths[sourcePath] = append(targetPaths[sourcePath], ExtractInfo{
-						Path: sourcePath,
-						Mode: uint(tarHeader.FileInfo().Mode()),
-					})
-				}
+			// Extract the hard link base file to the staging directory, when
+			// 1. it is not part of the target paths (len(targetPaths) == 0)
+			// 2. it is required by other hard links (exists as a key in the HardLinkRevMap)
+			// In case that [len(targetPaths) > 0], the hard link base file is extracted normally.
+			// Note that the hard link base file can also be a symlink.
+			// tarHeader.Name is used here since the paths in the HardLinkRevMap are relative.
+			if entry, ok := tarMetadata.HardLinkRevMap[tarHeader.Name]; ok {
+				targetDir = stagingDir
+				entry.StagingPath = filepath.Join(stagingDir, tarHeader.Name)
+				tarMetadata.HardLinkRevMap[tarHeader.Name] = entry
+				targetPaths[sourcePath] = append(targetPaths[sourcePath], ExtractInfo{
+					Path: sourcePath,
+					Mode: uint(tarHeader.FileInfo().Mode()),
+				})
 			} else {
 				// Nothing to do.
 				continue
@@ -306,8 +314,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			if tarHeader.Typeflag == tar.TypeLink {
 				// Set the [link] to the absolute path if it's a hard link
 				if entry, ok := tarMetadata.HardLinkRevMap[link]; ok {
-					// Set the [link] w.r.t. to different path prefix depending
-					// on whether the base file is in the staging directory.
 					if entry.StagingPath != "" {
 						link = entry.StagingPath
 					} else {
@@ -319,7 +325,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 					return fmt.Errorf("hard link target %s not found in the tarball header", tarHeader.Linkname)
 				}
 			}
-			// Set the HardLinkId to both the hard link base file,
+			// Set the HardLinkId to both the hard link and its counterpart file,
 			// so they are symmetric in the report.
 			if entry, ok := tarMetadata.HardLinkRevMap["."+targetPath]; ok {
 				hardLinkId = int(entry.Identifier)
