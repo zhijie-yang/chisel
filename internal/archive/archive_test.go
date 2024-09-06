@@ -490,9 +490,8 @@ func (s *S) testOpenArchiveArch(c *C, release ubuntuRelease, arch string) {
 	c.Assert(err, IsNil)
 
 	err = deb.Extract(pkg, &deb.ExtractOptions{
-		Package:    "hostname",
-		TargetDir:  extractDir,
-		StagingDir: c.MkDir(),
+		Package:   "hostname",
+		TargetDir: extractDir,
 		Extract: map[string][]deb.ExtractInfo{
 			"/usr/share/doc/hostname/copyright": {
 				{Path: "/copyright"},

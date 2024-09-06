@@ -226,16 +226,14 @@ func Run(options *RunOptions) (*Report, error) {
 		if reader == nil {
 			continue
 		}
-		stagingDir, err := os.MkdirTemp("", "chisel-staging-*")
 		if err != nil {
 			return nil, err
 		}
 		err = deb.Extract(reader, &deb.ExtractOptions{
-			Package:    slice.Package,
-			Extract:    extract[slice.Package],
-			TargetDir:  targetDir,
-			StagingDir: stagingDir,
-			Create:     create,
+			Package:   slice.Package,
+			Extract:   extract[slice.Package],
+			TargetDir: targetDir,
+			Create:    create,
 		})
 		reader.Close()
 		packages[slice.Package] = nil

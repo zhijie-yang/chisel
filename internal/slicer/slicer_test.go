@@ -1158,10 +1158,10 @@ var slicerTests = []slicerTest{{
 		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./file1.txt", "text for file1"),
-			testutil.Reg(0644, "./dir/file2.txt", "text for file2"),
-			testutil.Hln(0644, "./dir/hardlink1.txt", "./file1.txt"),
-			testutil.Hln(0644, "./hardlink2.txt", "./dir/file2.txt"),
+			testutil.Reg(0644, "./file1", "text for file1"),
+			testutil.Reg(0644, "./dir/file2", "text for file2"),
+			testutil.Hln(0644, "./dir/hardlink1.txt", "./file1"),
+			testutil.Hln(0644, "./hardlink2.txt", "./dir/file2"),
 		}),
 	},
 	release: map[string]string{
@@ -1175,16 +1175,43 @@ var slicerTests = []slicerTest{{
 	},
 	filesystem: map[string]string{
 		"/dir/":              "dir 0755",
-		"/dir/file2.txt":     "file 0644 dcddda2e",
 		"/dir/hardlink1.txt": "file 0644 df82bbbd",
-		"/file1.txt":         "file 0644 df82bbbd",
 		"/hardlink2.txt":     "file 0644 dcddda2e",
 	},
 	report: map[string]string{
-		"/file1.txt":         "hardlink 2 {test-package_myslice}",
-		"/dir/file2.txt":     "hardlink 1 {test-package_myslice}",
 		"/dir/hardlink1.txt": "hardlink 2 {test-package_myslice}",
 		"/hardlink2.txt":     "hardlink 1 {test-package_myslice}",
+	},
+}, {
+	summary: "Hard links and their counterparts should be equal in the report",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink", "./dir/file"),
+		}),
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/**:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":     "dir 0755",
+		"/dir/file": "file 0644 28121945",
+		"/hardlink": "file 0644 28121945",
+	},
+	report: map[string]string{
+		"/dir/":     "dir 0755 {test-package_myslice}",
+		"/dir/file": "hardlink 1 {test-package_myslice}",
+		"/hardlink": "hardlink 1 {test-package_myslice}",
 	},
 }}
 
