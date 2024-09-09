@@ -14,11 +14,23 @@ import (
 
 var shortFindHelp = "Find existing slices"
 var longFindHelp = `
-The find command queries the slice definitions for matching slices.
+The find command queries the slice definitions for matching slice names.
 Globs (* and ?) are allowed in the query.
 
 By default it fetches the slices for the same Ubuntu version as the
 current host, unless the --release flag is used.
+
+Examples:
+  Finding the slices of a package:
+    chisel find <package>, e.g. chisel find openssl
+  Finding the slices with specific slice name:
+    chisel find _<slice name>, e.g. chisel find _config
+  Finding the slices with specific package and slice name:
+    chisel find <package>_<slice name>, e.g. chisel find openssl_config
+	  or
+	chisel find <package> _<slice name>, e.g. chisel find openssl _config
+  Finding the slices with specific package and slice name with glob:
+    e.g., chisel find python* _conf*
 `
 
 var findDescs = map[string]string{
