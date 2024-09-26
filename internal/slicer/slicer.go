@@ -144,7 +144,7 @@ func Run(options *RunOptions) (*Report, error) {
 	}
 
 	// Fetch all packages, using the selection order.
-	packages := make(map[string]io.ReadCloser)
+	packages := make(map[string]io.ReadSeekCloser)
 	for _, slice := range options.Selection.Slices {
 		if packages[slice.Package] != nil {
 			continue

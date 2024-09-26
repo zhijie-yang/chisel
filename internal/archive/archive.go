@@ -18,7 +18,7 @@ import (
 
 type Archive interface {
 	Options() *Options
-	Fetch(pkg string) (io.ReadCloser, error)
+	Fetch(pkg string) (io.ReadSeekCloser, error)
 	Exists(pkg string) bool
 }
 
@@ -112,7 +112,7 @@ func (a *ubuntuArchive) selectPackage(pkg string) (control.Section, *ubuntuIndex
 	return selectedSection, selectedIndex, nil
 }
 
-func (a *ubuntuArchive) Fetch(pkg string) (io.ReadCloser, error) {
+func (a *ubuntuArchive) Fetch(pkg string) (io.ReadSeekCloser, error) {
 	section, index, err := a.selectPackage(pkg)
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func (index *ubuntuIndex) checkComponents(components []string) error {
 	return nil
 }
 
-func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.ReadCloser, error) {
+func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.ReadSeekCloser, error) {
 	reader, err := index.archive.cache.Open(digest)
 	if err == nil {
 		return reader, nil

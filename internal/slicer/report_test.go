@@ -42,7 +42,7 @@ var sampleFile = fsutil.Entry{
 
 var sampleLink = fsutil.Entry{
 	Path: "/base/example-link",
-	Mode: 0777,
+	Mode: fs.ModeSymlink | 0777,
 	Hash: "example-file_hash",
 	Size: 5678,
 	Link: "/base/example-file",
@@ -108,7 +108,7 @@ var reportTests = []struct {
 	expected: map[string]slicer.ReportEntry{
 		"/example-link": {
 			Path:   "/example-link",
-			Mode:   0777,
+			Mode:   fs.ModeSymlink | 0777,
 			Hash:   "example-file_hash",
 			Size:   5678,
 			Slices: map[*setup.Slice]bool{oneSlice: true},
@@ -192,16 +192,16 @@ var reportTests = []struct {
 }, {
 	summary: "Error for same path distinct link",
 	add: []sliceAndEntry{
-		{entry: sampleFile, slice: oneSlice},
+		{entry: sampleLink, slice: oneSlice},
 		{entry: fsutil.Entry{
-			Path: sampleFile.Path,
-			Mode: sampleFile.Mode,
-			Hash: sampleFile.Hash,
-			Size: sampleFile.Size,
+			Path: sampleLink.Path,
+			Mode: sampleLink.Mode,
+			Hash: sampleLink.Hash,
+			Size: sampleLink.Size,
 			Link: "distinct link",
 		}, slice: oneSlice},
 	},
-	err: `path /example-file reported twice with diverging link: "distinct link" != ""`,
+	err: `path /example-link reported twice with diverging link: "distinct link" != "/base/example-file"`,
 }, {
 	summary: "Error for path outside root",
 	add: []sliceAndEntry{
