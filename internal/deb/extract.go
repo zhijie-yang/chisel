@@ -38,6 +38,11 @@ type ExtractInfo struct {
 	Context  any
 }
 
+type PendingHardlink struct {
+	TargetPath   string
+	ExtractInfos []ExtractInfo
+}
+
 func getValidOptions(options *ExtractOptions) (*ExtractOptions, error) {
 	for extractPath, extractInfos := range options.Extract {
 		isGlob := strings.ContainsAny(extractPath, "*?")
@@ -62,7 +67,7 @@ func getValidOptions(options *ExtractOptions) (*ExtractOptions, error) {
 	return options, nil
 }
 
-func Extract(pkgReader io.Reader, options *ExtractOptions) (err error) {
+func Extract(pkgReader io.ReadSeeker, options *ExtractOptions) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("cannot extract from package %q: %w", options.Package, err)
@@ -83,43 +88,51 @@ func Extract(pkgReader io.Reader, options *ExtractOptions) (err error) {
 		return err
 	}
 
+	return extractData(pkgReader, validOpts)
+}
+
+func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
 	arReader := ar.NewReader(pkgReader)
-	var dataReader io.Reader
+	var dataReader io.ReadCloser
 	for dataReader == nil {
 		arHeader, err := arReader.Next()
 		if err == io.EOF {
-			return fmt.Errorf("no data payload")
+			return nil, fmt.Errorf("no data payload")
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 		switch arHeader.Name {
 		case "data.tar.gz":
 			gzipReader, err := gzip.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			defer gzipReader.Close()
 			dataReader = gzipReader
 		case "data.tar.xz":
 			xzReader, err := xz.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			dataReader = xzReader
+			dataReader = io.NopCloser(xzReader)
 		case "data.tar.zst":
 			zstdReader, err := zstd.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			defer zstdReader.Close()
-			dataReader = zstdReader
+			dataReader = zstdReader.IOReadCloser()
 		}
 	}
-	return extractData(dataReader, validOpts)
+
+	return dataReader, nil
 }
 
-func extractData(dataReader io.Reader, options *ExtractOptions) error {
+func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
+
+	dataReader, err := getDataReader(pkgReader)
+	if err != nil {
+		return err
+	}
 
 	oldUmask := syscall.Umask(0)
 	defer func() {
@@ -135,6 +148,8 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			}
 		}
 	}
+
+	pendingHardlinks := make(map[string][]PendingHardlink)
 
 	// When creating a file we will iterate through its parent directories and
 	// create them with the permissions defined in the tarball.
@@ -246,18 +261,50 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 				}
 			}
 			// Create the entry itself.
+			link := tarHeader.Linkname
+			if tarHeader.Typeflag == tar.TypeLink {
+				// A hard link requires the real path of the target file.
+				link = filepath.Join(options.TargetDir, link)
+			}
+
 			createOptions := &fsutil.CreateOptions{
 				Path:        filepath.Join(options.TargetDir, targetPath),
 				Mode:        tarHeader.FileInfo().Mode(),
 				Data:        pathReader,
-				Link:        tarHeader.Linkname,
+				Link:        link,
 				MakeParents: true,
 			}
 			err := options.Create(extractInfos, createOptions)
 			if err != nil {
-				return err
+				// Handle the hardlink where its counterpart is not extracted
+				if tarHeader.Typeflag == tar.TypeLink && strings.HasPrefix(err.Error(), "link target does not exist") {
+					basePath := sanitizePath(tarHeader.Linkname)
+					pendingHardlinks[basePath] = append(pendingHardlinks[basePath],
+						PendingHardlink{
+							TargetPath:   targetPath,
+							ExtractInfos: extractInfos,
+						})
+					pendingPaths[basePath] = true
+				} else {
+					return err
+				}
 			}
 		}
+	}
+
+	// Second pass to create hard links
+	if len(pendingHardlinks) > 0 {
+		pkgReader.Seek(0, io.SeekStart)
+		dataReader, err = getDataReader(pkgReader)
+		if err != nil {
+			return err
+		}
+		tarReader := tar.NewReader(dataReader)
+		err = handlePendingHardlinks(options, pendingHardlinks, tarReader, &pendingPaths)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	if len(pendingPaths) > 0 {
@@ -273,6 +320,58 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 		}
 	}
 
+	dataReader.Close()
+
+	return nil
+}
+
+func handlePendingHardlinks(options *ExtractOptions, pendingHardlinks map[string][]PendingHardlink,
+	tarReader *tar.Reader, pendingPaths *map[string]bool) error {
+	for {
+		tarHeader, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		sourcePath := sanitizePath(tarHeader.Name)
+		if sourcePath == "" {
+			continue
+		}
+
+		hardlinks, ok := pendingHardlinks[sourcePath]
+		if !ok {
+			continue
+		}
+
+		// Write the content for the first file in the hard link group
+		createOption := &fsutil.CreateOptions{
+			Path: filepath.Join(options.TargetDir, hardlinks[0].TargetPath),
+			Mode: tarHeader.FileInfo().Mode(),
+			Data: tarReader,
+		}
+
+		err = options.Create(hardlinks[0].ExtractInfos, createOption)
+		if err != nil {
+			return err
+		}
+		delete(*pendingPaths, sourcePath)
+
+		// Create the hard links for the rest of the group
+		for _, hardlink := range hardlinks[1:] {
+			createOption := &fsutil.CreateOptions{
+				Path: filepath.Join(options.TargetDir, hardlink.TargetPath),
+				Mode: tarHeader.FileInfo().Mode(),
+				Link: filepath.Join(options.TargetDir, hardlinks[0].TargetPath),
+			}
+			err := options.Create(hardlink.ExtractInfos, createOption)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -287,4 +386,12 @@ func parentDirs(path string) []string {
 		}
 	}
 	return parents
+}
+
+func sanitizePath(path string) string {
+	if len(path) < 3 || path[0] != '.' || path[1] != '/' {
+		return ""
+	}
+	path = path[1:]
+	return path
 }

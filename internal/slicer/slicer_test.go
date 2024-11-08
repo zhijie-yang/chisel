@@ -1445,6 +1445,211 @@ var slicerTests = []slicerTest{{
 					contents:
 		`,
 	},
+}, {
+	summary: "Valid hard link in two slices in the same package",
+	slices: []setup.SliceKey{
+		{"test-package", "slice1"},
+		{"test-package", "slice2"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink", "./dir/file"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				slice1:
+					contents:
+						/dir/file:
+						/hardlink:
+				slice2:
+					contents:
+						/dir/file:
+						/hardlink:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":     "dir 0755",
+		"/dir/file": "file 0644 28121945",
+		"/hardlink": "file 0644 28121945",
+	},
+	manifestPaths: map[string]string{
+		"/dir/file": "file 0644 28121945 <1> {test-package_slice1,test-package_slice2}",
+		"/hardlink": "file 0644 28121945 <1> {test-package_slice1,test-package_slice2}",
+	},
+}, {
+	summary: "Empty hard link is inflated with its counterpart",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink1", "./dir/file"),
+			testutil.Hln(0644, "./hardlink2", "./dir/file"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink1:
+						/hardlink2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink1": "file 0644 28121945",
+		"/hardlink2": "file 0644 28121945",
+	},
+	manifestPaths: map[string]string{
+		"/hardlink1": "file 0644 28121945 <1> {test-package_myslice}",
+		"/hardlink2": "file 0644 28121945 <1> {test-package_myslice}",
+	},
+}, {
+	summary: "Single hard link has 0 hardlink identifier",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink", "./dir/file"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink": "file 0644 28121945",
+	},
+	manifestPaths: map[string]string{
+		"/hardlink": "file 0644 28121945 <0> {test-package_myslice}",
+	},
+}, {
+	summary: "Hard link identifier distinguishes different hard links",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file1", "text for file1"),
+			testutil.Reg(0644, "./dir/file2", "text for file2"),
+			testutil.Hln(0644, "./hardlink1", "./dir/file1"),
+			testutil.Hln(0644, "./hardlink2", "./dir/file2"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/dir/file1:
+						/dir/file2:
+						/hardlink1:
+						/hardlink2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":      "dir 0755",
+		"/dir/file1": "file 0644 df82bbbd",
+		"/dir/file2": "file 0644 dcddda2e",
+		"/hardlink1": "file 0644 df82bbbd",
+		"/hardlink2": "file 0644 dcddda2e",
+	},
+	manifestPaths: map[string]string{
+		"/dir/file1": "file 0644 df82bbbd <1> {test-package_myslice}",
+		"/dir/file2": "file 0644 dcddda2e <2> {test-package_myslice}",
+		"/hardlink1": "file 0644 df82bbbd <1> {test-package_myslice}",
+		"/hardlink2": "file 0644 dcddda2e <2> {test-package_myslice}",
+	},
+}, {
+	summary: "Hard links handled with wildcard",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./file1.txt", "text for file1"),
+			testutil.Reg(0644, "./dir/file2.txt", "text for file2"),
+			testutil.Hln(0644, "./dir/hardlink1.txt", "./file1.txt"),
+			testutil.Hln(0644, "./hardlink2.txt", "./dir/file2.txt"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/**.txt:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":              "dir 0755",
+		"/dir/file2.txt":     "file 0644 dcddda2e",
+		"/dir/hardlink1.txt": "file 0644 df82bbbd",
+		"/file1.txt":         "file 0644 df82bbbd",
+		"/hardlink2.txt":     "file 0644 dcddda2e",
+	},
+	manifestPaths: map[string]string{
+		"/file1.txt":         "file 0644 df82bbbd <1> {test-package_myslice}",
+		"/dir/file2.txt":     "file 0644 dcddda2e <2> {test-package_myslice}",
+		"/dir/hardlink1.txt": "file 0644 df82bbbd <1> {test-package_myslice}",
+		"/hardlink2.txt":     "file 0644 dcddda2e <2> {test-package_myslice}",
+	},
+}, {
+	summary: "Symlink is a valid hard link base file", slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Lnk(0644, "./symlink", "./dir/file"),
+			testutil.Hln(0644, "./hardlink", "./symlink"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink:
+						/symlink:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink": "symlink ./dir/file",
+		"/symlink":  "symlink ./dir/file",
+	},
+	manifestPaths: map[string]string{
+		"/symlink":  "symlink ./dir/file <1> {test-package_myslice}",
+		"/hardlink": "symlink ./dir/file <1> {test-package_myslice}",
+	},
 }}
 
 var defaultChiselYaml = `
@@ -1604,7 +1809,7 @@ func treeDumpManifestPaths(mfest *manifest.Manifest) (map[string]string, error) 
 			fsDump = fmt.Sprintf("symlink %s", path.Link)
 		default: // Regular
 			if path.Size == 0 {
-				fsDump = fmt.Sprintf("file %s empty", path.Mode)
+				fsDump = fmt.Sprintf("file %s empty <%d>", path.Mode, path.HardLinkId)
 			} else if path.FinalSHA256 != "" {
 				fsDump = fmt.Sprintf("file %s %s %s", path.Mode, path.SHA256[:8], path.FinalSHA256[:8])
 			} else {
