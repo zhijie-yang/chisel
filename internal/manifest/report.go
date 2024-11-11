@@ -18,6 +18,7 @@ type ReportEntry struct {
 	Slices      map[*setup.Slice]bool
 	Link        string
 	FinalSHA256 string
+	HardLinkId  int
 }
 
 // Report holds the information about files and directories created when slicing
@@ -26,7 +27,8 @@ type Report struct {
 	// Root is the filesystem path where the all reported content is based.
 	Root string
 	// Entries holds all reported content, indexed by their path.
-	Entries map[string]ReportEntry
+	Entries        map[string]ReportEntry
+	currHardLinkId int
 }
 
 // NewReport returns an empty report for content that will be based at the
@@ -52,26 +54,55 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		return fmt.Errorf("cannot add path to report: %s", err)
 	}
 
+	// Handle the hard link group
+	hardLinkId := 0
+	sha256 := fsEntry.SHA256
+	size := fsEntry.Size
+	link := fsEntry.Link
+	if link != "" {
+		// Having the link target in root is a necessary but insufficient condition for a hardlink.
+		if strings.HasPrefix(fsEntry.Link, r.Root) {
+			relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
+			// With this, a hardlink is found
+			if entry, ok := r.Entries[relLinkPath]; ok {
+				if entry.HardLinkId == 0 {
+					r.currHardLinkId++
+					entry.HardLinkId = r.currHardLinkId
+					r.Entries[relLinkPath] = entry
+				}
+				hardLinkId = entry.HardLinkId
+				if fsEntry.Mode.IsRegular() { // If the hardlink links to a regular file
+					sha256 = entry.SHA256
+					size = entry.Size
+					link = ""
+				} else { // If the hardlink links to a symlink
+					link = entry.Link
+				}
+			}
+		} // else, this is a symlink
+	}
+
 	if entry, ok := r.Entries[relPath]; ok {
 		if fsEntry.Mode != entry.Mode {
 			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntry.Mode, entry.Mode)
-		} else if fsEntry.Link != entry.Link {
-			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, fsEntry.Link, entry.Link)
-		} else if fsEntry.Size != entry.Size {
-			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, fsEntry.Size, entry.Size)
-		} else if fsEntry.SHA256 != entry.SHA256 {
-			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, fsEntry.SHA256, entry.SHA256)
+		} else if link != entry.Link {
+			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, link, entry.Link)
+		} else if size != entry.Size {
+			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, size, entry.Size)
+		} else if sha256 != entry.SHA256 {
+			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, sha256, entry.SHA256)
 		}
 		entry.Slices[slice] = true
 		r.Entries[relPath] = entry
 	} else {
 		r.Entries[relPath] = ReportEntry{
-			Path:   relPath,
-			Mode:   fsEntry.Mode,
-			SHA256: fsEntry.SHA256,
-			Size:   fsEntry.Size,
-			Slices: map[*setup.Slice]bool{slice: true},
-			Link:   fsEntry.Link,
+			Path:       relPath,
+			Mode:       fsEntry.Mode,
+			SHA256:     sha256,
+			Size:       size,
+			Slices:     map[*setup.Slice]bool{slice: true},
+			Link:       link,
+			HardLinkId: hardLinkId,
 		}
 	}
 	return nil
