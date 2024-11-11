@@ -294,7 +294,13 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 
 	// Second pass to create hard links
 	if len(pendingHardlinks) > 0 {
-		pkgReader.Seek(0, io.SeekStart)
+		newOffset, err := pkgReader.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
+		}
+		if newOffset != 0 {
+			return fmt.Errorf("cannot seek to the beginning of the package")
+		}
 		dataReader, err = getDataReader(pkgReader)
 		if err != nil {
 			return err
