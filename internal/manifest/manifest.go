@@ -39,6 +39,7 @@ type Path struct {
 	FinalSHA256 string   `json:"final_sha256,omitempty"`
 	Size        uint64   `json:"size,omitempty"`
 	Link        string   `json:"link,omitempty"`
+	HardLinkId  int      `json:"hard_link_id,omitempty"`
 }
 
 type Content struct {
@@ -291,6 +292,7 @@ func manifestAddReport(dbw *jsonwall.DBWriter, report *Report) error {
 			FinalSHA256: entry.FinalSHA256,
 			Size:        uint64(entry.Size),
 			Link:        entry.Link,
+			HardLinkId:  entry.HardLinkId,
 		})
 		if err != nil {
 			return err

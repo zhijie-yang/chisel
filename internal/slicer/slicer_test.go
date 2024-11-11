@@ -101,11 +101,11 @@ var slicerTests = []slicerTest{{
 		"/other-dir/file": "symlink ../dir/file",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice}",
-		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/file":       "file 0644 cc55e2ec <0> {test-package_myslice}",
+		"/dir/file-copy":  "file 0644 cc55e2ec <0> {test-package_myslice}",
 		"/dir/foo/bar/":   "dir 01777 {test-package_myslice}",
-		"/dir/text-file":  "file 0644 5b41362b {test-package_myslice}",
-		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
+		"/dir/text-file":  "file 0644 5b41362b <0> {test-package_myslice}",
+		"/other-dir/file": "symlink ../dir/file <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Glob extraction",
@@ -126,8 +126,8 @@ var slicerTests = []slicerTest{{
 		"/dir/other-file":        "file 0644 63d5dd49",
 	},
 	manifestPaths: map[string]string{
-		"/dir/nested/other-file": "file 0644 6b86b273 {test-package_myslice}",
-		"/dir/other-file":        "file 0644 63d5dd49 {test-package_myslice}",
+		"/dir/nested/other-file": "file 0644 6b86b273 <0> {test-package_myslice}",
+		"/dir/other-file":        "file 0644 63d5dd49 <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Create new file under extracted directory and preserve parent directory permissions",
@@ -147,7 +147,7 @@ var slicerTests = []slicerTest{{
 		"/parent/new": "file 0644 5b41362b",
 	},
 	manifestPaths: map[string]string{
-		"/parent/new": "file 0644 5b41362b {test-package_myslice}",
+		"/parent/new": "file 0644 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Create new nested file under extracted directory and preserve parent directory permissions",
@@ -168,7 +168,7 @@ var slicerTests = []slicerTest{{
 		"/parent/permissions/new": "file 0644 5b41362b",
 	},
 	manifestPaths: map[string]string{
-		"/parent/permissions/new": "file 0644 5b41362b {test-package_myslice}",
+		"/parent/permissions/new": "file 0644 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Create new directory under extracted directory and preserve parent directory permissions",
@@ -211,7 +211,7 @@ var slicerTests = []slicerTest{{
 	manifestPaths: map[string]string{
 		"/parent/":                 "dir 01777 {test-package_myslice}",
 		"/parent/permissions/":     "dir 0764 {test-package_myslice}",
-		"/parent/permissions/file": "file 0755 722c14b3 {test-package_myslice}",
+		"/parent/permissions/file": "file 0755 722c14b3 <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Conditional architecture",
@@ -240,10 +240,10 @@ var slicerTests = []slicerTest{{
 		"/dir/nested/copy-3": "file 0644 84237a05",
 	},
 	manifestPaths: map[string]string{
-		"/dir/nested/copy-1": "file 0644 84237a05 {test-package_myslice}",
-		"/dir/nested/copy-3": "file 0644 84237a05 {test-package_myslice}",
-		"/dir/text-file-1":   "file 0644 5b41362b {test-package_myslice}",
-		"/dir/text-file-3":   "file 0644 5b41362b {test-package_myslice}",
+		"/dir/nested/copy-1": "file 0644 84237a05 <0> {test-package_myslice}",
+		"/dir/nested/copy-3": "file 0644 84237a05 <0> {test-package_myslice}",
+		"/dir/text-file-1":   "file 0644 5b41362b <0> {test-package_myslice}",
+		"/dir/text-file-3":   "file 0644 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Copyright is installed",
@@ -273,7 +273,7 @@ var slicerTests = []slicerTest{{
 		"/usr/share/doc/test-package/copyright": "file 0644 c2fca2aa",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/file": "file 0644 cc55e2ec <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Install two packages",
@@ -314,9 +314,9 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/foo/":     "dir 0755 {test-package_myslice}",
-		"/dir/file": "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/file": "file 0644 cc55e2ec <0> {test-package_myslice}",
 		"/bar/":     "dir 0755 {other-package_myslice}",
-		"/file":     "file 0644 fc02ca0e {other-package_myslice}",
+		"/file":     "file 0644 fc02ca0e <0> {other-package_myslice}",
 	},
 }, {
 	summary: "Install two packages, explicit path has preference over implicit parent",
@@ -357,7 +357,7 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/dir/":     "dir 01777 {explicit-dir_myslice}",
-		"/dir/file": "file 0644 a441b15f {implicit-parent_myslice}",
+		"/dir/file": "file 0644 a441b15f <0> {implicit-parent_myslice}",
 	},
 }, {
 	summary: "Valid same file in two slices in different packages",
@@ -391,7 +391,7 @@ var slicerTests = []slicerTest{{
 		"/textFile": "file 0644 c6c83d10",
 	},
 	manifestPaths: map[string]string{
-		"/textFile": "file 0644 c6c83d10 {other-package_myslice,test-package_myslice}",
+		"/textFile": "file 0644 c6c83d10 <0> {other-package_myslice,test-package_myslice}",
 	},
 }, {
 	summary: "Script: write a file",
@@ -412,7 +412,7 @@ var slicerTests = []slicerTest{{
 		"/dir/text-file": "file 0644 d98cf53e",
 	},
 	manifestPaths: map[string]string{
-		"/dir/text-file": "file 0644 5b41362b d98cf53e {test-package_myslice}",
+		"/dir/text-file": "file 0644 5b41362b d98cf53e <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Script: read a file",
@@ -437,8 +437,8 @@ var slicerTests = []slicerTest{{
 		"/foo/text-file-2": "file 0644 5b41362b",
 	},
 	manifestPaths: map[string]string{
-		"/dir/text-file-1": "file 0644 5b41362b {test-package_myslice}",
-		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b {test-package_myslice}",
+		"/dir/text-file-1": "file 0644 5b41362b <0> {test-package_myslice}",
+		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Script: use 'until' to remove file after mutate",
@@ -462,7 +462,7 @@ var slicerTests = []slicerTest{{
 		"/foo/text-file-2": "file 0644 5b41362b",
 	},
 	manifestPaths: map[string]string{
-		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b {test-package_myslice}",
+		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Script: use 'until' to remove wildcard after mutate",
@@ -501,7 +501,7 @@ var slicerTests = []slicerTest{{
 		"/dir/nested/file-copy": "file 0644 cc55e2ec",
 	},
 	manifestPaths: map[string]string{
-		"/dir/nested/file-copy": "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/nested/file-copy": "file 0644 cc55e2ec <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Script: writing same contents to existing file does not set the final hash in report",
@@ -522,7 +522,7 @@ var slicerTests = []slicerTest{{
 		"/dir/text-file": "file 0644 5b41362b",
 	},
 	manifestPaths: map[string]string{
-		"/dir/text-file": "file 0644 5b41362b {test-package_myslice}",
+		"/dir/text-file": "file 0644 5b41362b <0> {test-package_myslice}",
 	},
 }, {
 	summary: "Script: cannot write non-mutable files",
@@ -838,8 +838,8 @@ var slicerTests = []slicerTest{{
 		"/other-file": "file 0644 fa0c9cdb",
 	},
 	manifestPaths: map[string]string{
-		"/file":       "file 0644 7a3e00f5 {test-package_myslice}",
-		"/other-file": "file 0644 fa0c9cdb {other-package_myslice}",
+		"/file":       "file 0644 7a3e00f5 <0> {test-package_myslice}",
+		"/other-file": "file 0644 fa0c9cdb <0> {other-package_myslice}",
 	},
 	manifestPkgs: map[string]string{
 		"test-package":  "test-package v1 a1 h1",
@@ -905,7 +905,7 @@ var slicerTests = []slicerTest{{
 		"/file": "file 0644 fa0c9cdb",
 	},
 	manifestPaths: map[string]string{
-		"/file": "file 0644 fa0c9cdb {test-package_myslice}",
+		"/file": "file 0644 fa0c9cdb <0> {test-package_myslice}",
 	},
 	manifestPkgs: map[string]string{
 		"test-package": "test-package v2 a2 h2",
@@ -1062,7 +1062,7 @@ var slicerTests = []slicerTest{{
 		"/file": "file 0644 7a3e00f5",
 	},
 	manifestPaths: map[string]string{
-		"/file": "file 0644 7a3e00f5 {test-package_myslice}",
+		"/file": "file 0644 7a3e00f5 <0> {test-package_myslice}",
 	},
 	manifestPkgs: map[string]string{
 		"test-package": "test-package v1 a1 h1",
@@ -1099,11 +1099,11 @@ var slicerTests = []slicerTest{{
 		"/other-dir/file": "symlink ../dir/file",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice1}",
-		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/file":       "file 0644 cc55e2ec <0> {test-package_myslice1}",
+		"/dir/file-copy":  "file 0644 cc55e2ec <0> {test-package_myslice1}",
 		"/dir/foo/bar/":   "dir 01777 {test-package_myslice1}",
-		"/dir/other-file": "file 0644 63d5dd49 {test-package_myslice2}",
-		"/other-dir/file": "symlink ../dir/file {test-package_myslice1}",
+		"/dir/other-file": "file 0644 63d5dd49 <0> {test-package_myslice2}",
+		"/other-dir/file": "symlink ../dir/file <0> {test-package_myslice1}",
 	},
 }, {
 	summary: "Same glob in several entries with until:mutate and reading from script",
@@ -1141,15 +1141,15 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/dir/":                         "dir 0755 {test-package_myslice2}",
-		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice2}",
+		"/dir/file":                     "file 0644 cc55e2ec <0> {test-package_myslice2}",
 		"/dir/nested/":                  "dir 0755 {test-package_myslice2}",
-		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice2}",
-		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice2}",
-		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice2}",
+		"/dir/nested/file":              "file 0644 84237a05 <0> {test-package_myslice2}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 <0> {test-package_myslice2}",
+		"/dir/other-file":               "file 0644 63d5dd49 <0> {test-package_myslice2}",
 		"/dir/several/":                 "dir 0755 {test-package_myslice2}",
 		"/dir/several/levels/":          "dir 0755 {test-package_myslice2}",
 		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice2}",
-		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice2}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff <0> {test-package_myslice2}",
 	},
 }, {
 	summary: "Overlapping globs, until:mutate and reading from script",
@@ -1187,15 +1187,15 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/dir/":                         "dir 0755 {test-package_myslice1}",
-		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/file":                     "file 0644 cc55e2ec <0> {test-package_myslice1}",
 		"/dir/nested/":                  "dir 0755 {test-package_myslice1}",
-		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice1}",
-		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice1}",
-		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice1}",
+		"/dir/nested/file":              "file 0644 84237a05 <0> {test-package_myslice1}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 <0> {test-package_myslice1}",
+		"/dir/other-file":               "file 0644 63d5dd49 <0> {test-package_myslice1}",
 		"/dir/several/":                 "dir 0755 {test-package_myslice1}",
 		"/dir/several/levels/":          "dir 0755 {test-package_myslice1}",
 		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice1}",
-		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice1}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff <0> {test-package_myslice1}",
 	},
 }, {
 	summary: "Overlapping glob and single entry, until:mutate on entry and reading from script",
@@ -1233,15 +1233,15 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/dir/":                         "dir 0755 {test-package_myslice1}",
-		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/file":                     "file 0644 cc55e2ec <0> {test-package_myslice1}",
 		"/dir/nested/":                  "dir 0755 {test-package_myslice1}",
-		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice1}",
-		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice1}",
-		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice1}",
+		"/dir/nested/file":              "file 0644 84237a05 <0> {test-package_myslice1}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 <0> {test-package_myslice1}",
+		"/dir/other-file":               "file 0644 63d5dd49 <0> {test-package_myslice1}",
 		"/dir/several/":                 "dir 0755 {test-package_myslice1}",
 		"/dir/several/levels/":          "dir 0755 {test-package_myslice1}",
 		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice1}",
-		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice1}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff <0> {test-package_myslice1}",
 	},
 }, {
 	summary: "Overlapping glob and single entry, until:mutate on glob and reading from script",
@@ -1270,7 +1270,7 @@ var slicerTests = []slicerTest{{
 		"/dir/file": "file 0644 cc55e2ec",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 cc55e2ec {test-package_myslice2}",
+		"/dir/file": "file 0644 cc55e2ec <0> {test-package_myslice2}",
 	},
 }, {
 	summary: "Overlapping glob and single entry, until:mutate on both and reading from script",
@@ -1319,7 +1319,7 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem:    map[string]string{"/file": "file 0644 2c26b46b"},
-	manifestPaths: map[string]string{"/file": "file 0644 2c26b46b {test-package_myslice1,test-package_myslice2}"},
+	manifestPaths: map[string]string{"/file": "file 0644 2c26b46b <0> {test-package_myslice1,test-package_myslice2}"},
 }, {
 	summary: "Install two packages, both are recorded",
 	slices: []setup.SliceKey{
@@ -1806,14 +1806,14 @@ func treeDumpManifestPaths(mfest *manifest.Manifest) (map[string]string, error) 
 		case strings.HasSuffix(path.Path, "/"):
 			fsDump = fmt.Sprintf("dir %s", path.Mode)
 		case path.Link != "":
-			fsDump = fmt.Sprintf("symlink %s", path.Link)
+			fsDump = fmt.Sprintf("symlink %s <%d>", path.Link, path.HardLinkId)
 		default: // Regular
 			if path.Size == 0 {
 				fsDump = fmt.Sprintf("file %s empty <%d>", path.Mode, path.HardLinkId)
 			} else if path.FinalSHA256 != "" {
-				fsDump = fmt.Sprintf("file %s %s %s", path.Mode, path.SHA256[:8], path.FinalSHA256[:8])
+				fsDump = fmt.Sprintf("file %s %s %s <%d>", path.Mode, path.SHA256[:8], path.FinalSHA256[:8], path.HardLinkId)
 			} else {
-				fsDump = fmt.Sprintf("file %s %s", path.Mode, path.SHA256[:8])
+				fsDump = fmt.Sprintf("file %s %s <%d>", path.Mode, path.SHA256[:8], path.HardLinkId)
 			}
 		}
 

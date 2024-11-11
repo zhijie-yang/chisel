@@ -63,7 +63,6 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		// Having the link target in root is a necessary but insufficient condition for a hardlink.
 		if strings.HasPrefix(fsEntry.Link, r.Root) {
 			relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
-			fmt.Println(relLinkPath)
 			// With this, a hardlink is found
 			if entry, ok := r.Entries[relLinkPath]; ok {
 				if entry.HardLinkId == 0 {
@@ -75,18 +74,15 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 				if fsEntry.Mode.IsRegular() { // If the hardlink links to a regular file
 					sha256 = entry.SHA256
 					size = entry.Size
-					link = relLinkPath
+					link = ""
 				} else { // If the hardlink links to a symlink
 					link = entry.Link
 				}
-			} // else, this is a symlink
+			}
 		} // else, this is a symlink
 	}
 
-	fmt.Println("relPath", relPath, "hardLinkId", hardLinkId, "sha256", sha256, "size", size, "link", link)
-	fmt.Println("r.Entries", r.Entries)
 	if entry, ok := r.Entries[relPath]; ok {
-		fmt.Println("entry", entry)
 		if fsEntry.Mode != entry.Mode {
 			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntry.Mode, entry.Mode)
 		} else if link != entry.Link {
