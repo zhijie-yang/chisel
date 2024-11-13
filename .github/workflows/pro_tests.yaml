@@ -5,16 +5,19 @@ on:
   push:
     paths-ignore:
       - '**.md'
-  pull_request:
-    branches: [main]
   schedule:
     - cron: "0 0 */2 * *"
+  workflow_run:
+    workflows: ["CLA check"]      # The name of the workflow you want to wait for
+    types:
+      - completed
 
 jobs:
   real-archive-tests:
+    name: Real Archive Tests
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     # Do not change to newer releases as "fips" may not be available there.
     runs-on: ubuntu-20.04
-    name: Real Archive Tests
     steps:
       - uses: actions/checkout@v3
 
@@ -56,6 +59,7 @@ jobs:
 
   spread-tests:
     name: Spread tests
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
