@@ -15,7 +15,7 @@ on:
 jobs:
   real-archive-tests:
     name: Real Archive Tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     # Do not change to newer releases as "fips" may not be available there.
     runs-on: ubuntu-20.04
     steps:
@@ -59,7 +59,7 @@ jobs:
 
   spread-tests:
     name: Spread tests
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
