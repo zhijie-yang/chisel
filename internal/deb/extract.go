@@ -276,7 +276,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 			err := options.Create(extractInfos, createOptions)
 			if err != nil {
-				// Handle the hardlink where its counterpart is not extracted
+				// Handle the hard link where its counterpart is not extracted
 				if tarHeader.Typeflag == tar.TypeLink && strings.HasPrefix(err.Error(), "link target does not exist") {
 					basePath := sanitizePath(tarHeader.Linkname)
 					pendingHardlinks[basePath] = append(pendingHardlinks[basePath],
@@ -352,9 +352,11 @@ func handlePendingHardlinks(options *ExtractOptions, pendingHardlinks map[string
 			continue
 		}
 
+		targetPath := hardlinks[0].TargetPath
+		extractPath := filepath.Join(options.TargetDir, targetPath)
 		// Write the content for the first file in the hard link group
 		createOption := &fsutil.CreateOptions{
-			Path: filepath.Join(options.TargetDir, hardlinks[0].TargetPath),
+			Path: extractPath,
 			Mode: tarHeader.FileInfo().Mode(),
 			Data: tarReader,
 		}
@@ -364,18 +366,20 @@ func handlePendingHardlinks(options *ExtractOptions, pendingHardlinks map[string
 			return err
 		}
 		delete(*pendingPaths, sourcePath)
+		delete(*pendingPaths, targetPath)
 
 		// Create the hard links for the rest of the group
 		for _, hardlink := range hardlinks[1:] {
 			createOption := &fsutil.CreateOptions{
 				Path: filepath.Join(options.TargetDir, hardlink.TargetPath),
 				Mode: tarHeader.FileInfo().Mode(),
-				Link: filepath.Join(options.TargetDir, hardlinks[0].TargetPath),
+				Link: extractPath,
 			}
 			err := options.Create(hardlink.ExtractInfos, createOption)
 			if err != nil {
 				return err
 			}
+			delete(*pendingPaths, hardlink.TargetPath)
 		}
 	}
 	return nil

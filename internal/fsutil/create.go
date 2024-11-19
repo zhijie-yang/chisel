@@ -163,7 +163,7 @@ func createHardLink(o *CreateOptions) error {
 	debugf("Creating hard link: %s => %s", o.Path, o.Link)
 	linkInfo, err := os.Lstat(o.Link)
 	if err != nil && os.IsNotExist(err) {
-		return fmt.Errorf("link target does not exist: %s", o.Link)
+		return &LinkTargetNotExistError{Link: o.Link}
 	} else if err != nil {
 		return err
 	}
@@ -222,4 +222,12 @@ func (rp *writerProxy) Close() error {
 	rp.entry.SHA256 = hex.EncodeToString(rp.h.Sum(nil))
 	rp.entry.Size = rp.size
 	return rp.inner.Close()
+}
+
+type LinkTargetNotExistError struct {
+	Link string
+}
+
+func (e *LinkTargetNotExistError) Error() string {
+	return fmt.Sprintf("link target does not exist: %s", e.Link)
 }

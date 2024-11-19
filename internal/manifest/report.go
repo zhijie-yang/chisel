@@ -31,6 +31,8 @@ type Report struct {
 	currHardLinkId int
 }
 
+const NON_HARDLINK = 0
+
 // NewReport returns an empty report for content that will be based at the
 // provided root path.
 func NewReport(root string) (*Report, error) {
@@ -54,43 +56,17 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		return fmt.Errorf("cannot add path to report: %s", err)
 	}
 
-	// Handle the hard link group
-	hardLinkId := 0
-	sha256 := fsEntry.SHA256
-	size := fsEntry.Size
-	link := fsEntry.Link
-	if link != "" {
-		// Having the link target in root is a necessary but insufficient condition for a hardlink.
-		if strings.HasPrefix(fsEntry.Link, r.Root) {
-			relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
-			// With this, a hardlink is found
-			if entry, ok := r.Entries[relLinkPath]; ok {
-				if entry.HardLinkId == 0 {
-					r.currHardLinkId++
-					entry.HardLinkId = r.currHardLinkId
-					r.Entries[relLinkPath] = entry
-				}
-				hardLinkId = entry.HardLinkId
-				if fsEntry.Mode.IsRegular() { // If the hardlink links to a regular file
-					sha256 = entry.SHA256
-					size = entry.Size
-					link = ""
-				} else { // If the hardlink links to a symlink
-					link = entry.Link
-				}
-			}
-		} // else, this is a symlink
-	}
+	fsEntry, hardLinkId := r.handleHardlinkReport(fsEntry)
 
 	if entry, ok := r.Entries[relPath]; ok {
 		if fsEntry.Mode != entry.Mode {
 			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntry.Mode, entry.Mode)
-		} else if link != entry.Link {
-			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, link, entry.Link)
-		} else if size != entry.Size {
-			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, size, entry.Size)
-		} else if sha256 != entry.SHA256 {
-			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, sha256, entry.SHA256)
+		} else if fsEntry.Link != entry.Link {
+			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, fsEntry.Link, entry.Link)
+		} else if fsEntry.Size != entry.Size {
+			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, fsEntry.Size, entry.Size)
+		} else if fsEntry.SHA256 != entry.SHA256 {
+			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, fsEntry.SHA256, entry.SHA256)
 		}
 		entry.Slices[slice] = true
 		r.Entries[relPath] = entry
@@ -98,14 +74,51 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		r.Entries[relPath] = ReportEntry{
 			Path:       relPath,
 			Mode:       fsEntry.Mode,
-			SHA256:     sha256,
-			Size:       size,
+			SHA256:     fsEntry.SHA256,
+			Size:       fsEntry.Size,
 			Slices:     map[*setup.Slice]bool{slice: true},
-			Link:       link,
+			Link:       fsEntry.Link,
 			HardLinkId: hardLinkId,
 		}
 	}
 	return nil
+}
+
+func (r *Report) handleHardlinkReport(fsEntry *fsutil.Entry) (*fsutil.Entry, int) {
+	// Handle the hard link group
+	hardLinkId := NON_HARDLINK
+	sha256 := fsEntry.SHA256
+	size := fsEntry.Size
+	link := fsEntry.Link
+	if r.entryIsHardLink(fsEntry.Link) {
+		relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
+		// With this, a hardlink is found
+		if entry, ok := r.Entries[relLinkPath]; ok {
+			if entry.HardLinkId == NON_HARDLINK {
+				r.currHardLinkId++
+				entry.HardLinkId = r.currHardLinkId
+				r.Entries[relLinkPath] = entry
+			}
+			hardLinkId = entry.HardLinkId
+			if fsEntry.Mode.IsRegular() {
+				// The hard link links to a regular file
+				sha256 = entry.SHA256
+				size = entry.Size
+				link = ""
+			} else {
+				// The hard link links to a symlink
+				link = entry.Link
+			}
+		}
+	}
+
+	return &fsutil.Entry{
+		Path:   fsEntry.Path,
+		Mode:   fsEntry.Mode,
+		SHA256: sha256,
+		Size:   size,
+		Link:   link,
+	}, hardLinkId
 }
 
 // Mutate updates the FinalSHA256 and Size of an existing path entry.
@@ -141,4 +154,8 @@ func (r *Report) sanitizeAbsPath(path string, isDir bool) (relPath string, err e
 		relPath = relPath + "/"
 	}
 	return relPath, nil
+}
+
+func (r *Report) entryIsHardLink(link string) bool {
+	return link != "" && strings.HasPrefix(link, r.Root)
 }
