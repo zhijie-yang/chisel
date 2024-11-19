@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -277,7 +278,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			err := options.Create(extractInfos, createOptions)
 			if err != nil {
 				// Handle the hard link where its counterpart is not extracted
-				if tarHeader.Typeflag == tar.TypeLink && strings.HasPrefix(err.Error(), "link target does not exist") {
+				if tarHeader.Typeflag == tar.TypeLink && errors.Is(err, fsutil.LinkTargetNotExistError) {
 					basePath := sanitizePath(tarHeader.Linkname)
 					pendingHardlinks[basePath] = append(pendingHardlinks[basePath],
 						PendingHardlink{

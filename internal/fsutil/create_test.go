@@ -130,7 +130,7 @@ var createTests = []createTest{{
 	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
-	error: `link target does not exist: \/[^ ]*\/missing-file`,
+	error: `link target does not exist`,
 }, {
 	summary: "Re-creating a duplicated hard link keeps the original link",
 	options: fsutil.CreateOptions{
