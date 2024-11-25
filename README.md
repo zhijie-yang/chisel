@@ -87,19 +87,19 @@ archives:
 
 The following Pro archives are currently supported:
 
-| `pro` value | Archive URL | Corresponding Ubuntu Pro service |
-| - | - |----------------------------------|
-| fips         | https://esm.ubuntu.com/fips/ubuntu         | fips                             |
-| fips-updates | https://esm.ubuntu.com/fips-updates/ubuntu | fips-updates                     |
-| apps         | https://esm.ubuntu.com/apps/ubuntu         | esm-apps                         |
-| infra        | https://esm.ubuntu.com/infra/ubuntu        | esm-infra                        |
+| `pro` value  | Archive URL                                |
+|--------------|--------------------------------------------|
+| fips         | https://esm.ubuntu.com/fips/ubuntu         |
+| fips-updates | https://esm.ubuntu.com/fips-updates/ubuntu |
+| esm-apps     | https://esm.ubuntu.com/apps/ubuntu         |
+| esm-infra    | https://esm.ubuntu.com/infra/ubuntu        |
 
 If the system is using the [Pro client](https://ubuntu.com/pro/tutorial), and the
 services are enabled, the credentials will be automatically picked up from
 `/etc/apt/auth.conf.d/`. However, the default permissions of the credentials file
 need to be changed so that Chisel can read it. Example:
 ```shell
-sudo pro enable fips
+sudo pro enable esm-infra
 
 sudo setfacl -m u:$USER:r /etc/apt/auth.conf.d/90ubuntu-advantage
 # or, alternatively,

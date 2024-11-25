@@ -272,11 +272,12 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 
 			createOptions := &fsutil.CreateOptions{
-				Path:        filepath.Join(options.TargetDir, targetPath),
-				Mode:        tarHeader.FileInfo().Mode(),
-				Data:        pathReader,
-				Link:        link,
-				MakeParents: true,
+				Path:         filepath.Join(options.TargetDir, targetPath),
+				Mode:         tarHeader.FileInfo().Mode(),
+				Data:         pathReader,
+				Link:         link,
+				MakeParents:  true,
+				OverrideMode: true,
 			}
 			err := options.Create(extractInfos, createOptions)
 			if err != nil {
