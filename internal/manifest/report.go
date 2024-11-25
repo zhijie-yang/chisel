@@ -27,11 +27,12 @@ type Report struct {
 	// Root is the filesystem path where the all reported content is based.
 	Root string
 	// Entries holds all reported content, indexed by their path.
-	Entries        map[string]ReportEntry
-	currHardLinkId int
+	Entries map[string]ReportEntry
+	// curHardLinkId is used to allocate unique HardLinkId for hard links.
+	curHardLinkId int
 }
 
-const NON_HARDLINK = 0
+const NON_HARD_LINK = 0
 
 // NewReport returns an empty report for content that will be based at the
 // provided root path.
@@ -56,7 +57,10 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		return fmt.Errorf("cannot add path to report: %s", err)
 	}
 
-	fsEntry, hardLinkId := r.handleHardlinkReport(fsEntry)
+	hardLinkId := NON_HARD_LINK
+	if r.entryIsHardLink(fsEntry.Link) {
+		hardLinkId = r.getHardLinkId(fsEntry)
+	}
 
 	if entry, ok := r.Entries[relPath]; ok {
 		if fsEntry.Mode != entry.Mode {
@@ -84,41 +88,30 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	return nil
 }
 
-func (r *Report) handleHardlinkReport(fsEntry *fsutil.Entry) (*fsutil.Entry, int) {
-	// Handle the hard link group
-	hardLinkId := NON_HARDLINK
-	sha256 := fsEntry.SHA256
-	size := fsEntry.Size
-	link := fsEntry.Link
-	if r.entryIsHardLink(fsEntry.Link) {
-		relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
-		// With this, a hardlink is found
-		if entry, ok := r.Entries[relLinkPath]; ok {
-			if entry.HardLinkId == NON_HARDLINK {
-				r.currHardLinkId++
-				entry.HardLinkId = r.currHardLinkId
-				r.Entries[relLinkPath] = entry
-			}
-			hardLinkId = entry.HardLinkId
-			if fsEntry.Mode.IsRegular() {
-				// The hard link links to a regular file
-				sha256 = entry.SHA256
-				size = entry.Size
-				link = ""
-			} else {
-				// The hard link links to a symlink
-				link = entry.Link
-			}
+// getHardLinkId mutates the fsEntry for the creation of the report entry
+// and returns the hard link id.
+func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) int {
+	hardLinkId := NON_HARD_LINK
+	relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
+	if entry, ok := r.Entries[relLinkPath]; ok {
+		if entry.HardLinkId == NON_HARD_LINK {
+			r.curHardLinkId++
+			entry.HardLinkId = r.curHardLinkId
+			r.Entries[relLinkPath] = entry
+		}
+		hardLinkId = entry.HardLinkId
+		if fsEntry.Mode.IsRegular() {
+			// The hard link links to a regular file
+			fsEntry.SHA256 = entry.SHA256
+			fsEntry.Size = entry.Size
+			fsEntry.Link = ""
+		} else {
+			// The hard link links to a symlink
+			fsEntry.Link = entry.Link
 		}
 	}
 
-	return &fsutil.Entry{
-		Path:   fsEntry.Path,
-		Mode:   fsEntry.Mode,
-		SHA256: sha256,
-		Size:   size,
-		Link:   link,
-	}, hardLinkId
+	return hardLinkId
 }
 
 // Mutate updates the FinalSHA256 and Size of an existing path entry.
@@ -156,6 +149,11 @@ func (r *Report) sanitizeAbsPath(path string, isDir bool) (relPath string, err e
 	return relPath, nil
 }
 
+// entryIsHardLink determines if a link path belongs to a hard link by
+// checking if the link path has a prefix of the root path, since
+// hard links are created with absolute paths prefixing the report's root
+// path, while symlinks are created either with relative paths or absolute
+// paths that do not have the report's root path as a prefix.
 func (r *Report) entryIsHardLink(link string) bool {
 	return link != "" && strings.HasPrefix(link, r.Root)
 }

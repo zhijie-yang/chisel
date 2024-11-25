@@ -353,15 +353,33 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Dangling hard link",
+	summary: "Hard link is filled with the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		testutil.Hln(0644, "./link", "./non-existing-target"),
+		testutil.Reg(0644, "./file", "text for file"),
+		testutil.Hln(0644, "./hardlink", "./file"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
-			"/**": []deb.ExtractInfo{{
-				Path: "/**",
+			"/hardlink": []deb.ExtractInfo{{
+				Path: "/hardlink",
+			}},
+		},
+	},
+	result: map[string]string{
+		"/hardlink": "file 0644 28121945",
+	},
+	notCreated: []string{},
+}, {
+	summary: "Dangling hard link",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		testutil.Hln(0644, "./hardlink", "./non-existing-target"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/hardlink": []deb.ExtractInfo{{
+				Path: "/hardlink",
 			}},
 		},
 	},
