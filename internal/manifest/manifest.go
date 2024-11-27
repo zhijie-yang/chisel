@@ -39,7 +39,7 @@ type Path struct {
 	FinalSHA256 string   `json:"final_sha256,omitempty"`
 	Size        uint64   `json:"size,omitempty"`
 	Link        string   `json:"link,omitempty"`
-	HardLinkId  int      `json:"hard_link_id,omitempty"`
+	HardLinkId  uint64   `json:"hard_link_id,omitempty"`
 }
 
 type Content struct {

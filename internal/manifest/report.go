@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/canonical/chisel/internal/fsutil"
 	"github.com/canonical/chisel/internal/setup"
@@ -18,7 +19,7 @@ type ReportEntry struct {
 	Slices      map[*setup.Slice]bool
 	Link        string
 	FinalSHA256 string
-	HardLinkId  int
+	HardLinkId  uint64
 }
 
 // Report holds the information about files and directories created when slicing
@@ -31,10 +32,10 @@ type Report struct {
 
 	// curHardLinkId is used internally to allocate unique HardLinkId for hard
 	// links.
-	curHardLinkId int
+	curHardLinkId uint64
 }
 
-const NON_HARD_LINK = 0
+const NON_HARD_LINK uint64 = 0
 
 // NewReport returns an empty report for content that will be based at the
 // provided root path.
@@ -92,12 +93,12 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 
 // getHardLinkId mutates the fsEntry for the creation of the report entry
 // and returns the hard link id.
-func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) int {
+func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
 	hardLinkId := NON_HARD_LINK
 	relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
 	if entry, ok := r.Entries[relLinkPath]; ok {
 		if entry.HardLinkId == NON_HARD_LINK {
-			r.curHardLinkId++
+			atomic.AddUint64(&r.curHardLinkId, 1)
 			entry.HardLinkId = r.curHardLinkId
 			r.Entries[relLinkPath] = entry
 		}
