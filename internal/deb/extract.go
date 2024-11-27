@@ -290,6 +290,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 						ExtractInfos: extractInfos,
 					}
 					pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
+					pendingPaths[basePath] = true
 				} else {
 					return err
 				}
@@ -372,6 +373,7 @@ func handlePendingHardLinks(options *ExtractOptions, pendingHardLinks map[string
 		if err != nil {
 			return err
 		}
+		delete(pendingPaths, sourcePath)
 		delete(pendingPaths, targetPath)
 
 		// Create the remaining hard links.
