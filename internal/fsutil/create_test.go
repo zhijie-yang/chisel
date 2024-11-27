@@ -115,9 +115,8 @@ var createTests = []createTest{{
 		options.Link = filepath.Join(targetDir, options.Link)
 	},
 	result: map[string]string{
-		"/file":         "file 0644 3a6eb079",
-		"/dir/":         "dir 0755",
-		"/dir/hardlink": "file 0644 3a6eb079",
+		"/file":     "file 0644 3a6eb079",
+		"/hardlink": "file 0644 3a6eb079",
 	},
 }, {
 	summary: "Cannot create a hard link if the link target does not exist",
