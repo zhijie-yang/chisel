@@ -17,7 +17,7 @@ import (
 type createTest struct {
 	summary string
 	options fsutil.CreateOptions
-	hackopt func(c *C, targetDir string, options *fsutil.CreateOptions)
+	hackopt func(c *C, dir string, opts *fsutil.CreateOptions)
 	result  map[string]string
 	error   string
 }
@@ -79,8 +79,8 @@ var createTests = []createTest{{
 		Path: "foo",
 		Mode: fs.ModeDir | 0775,
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		c.Assert(os.Mkdir(filepath.Join(targetDir, "foo/"), fs.ModeDir|0765), IsNil)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		c.Assert(os.Mkdir(filepath.Join(dir, "foo/"), fs.ModeDir|0765), IsNil)
 	},
 	result: map[string]string{
 		// mode is not updated.
@@ -94,8 +94,8 @@ var createTests = []createTest{{
 		Mode: 0644,
 		Data: bytes.NewBufferString("changed"),
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "foo"), []byte("data"), 0666), IsNil)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		c.Assert(os.WriteFile(filepath.Join(dir, "foo"), []byte("data"), 0666), IsNil)
 	},
 	result: map[string]string{
 		// mode is not updated.
@@ -109,10 +109,10 @@ var createTests = []createTest{{
 		Mode:        0644,
 		MakeParents: true,
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "file"), []byte("data"), 0644), IsNil)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		c.Assert(os.WriteFile(filepath.Join(dir, "file"), []byte("data"), 0644), IsNil)
 		// An absolute path is required to create a hard link.
-		options.Link = filepath.Join(targetDir, options.Link)
+		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	result: map[string]string{
 		"/file":     "file 0644 3a6eb079",
@@ -126,8 +126,8 @@ var createTests = []createTest{{
 		Mode:        0644,
 		MakeParents: true,
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		options.Link = filepath.Join(targetDir, options.Link)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	error: `link target does not exist`,
 }, {
@@ -138,10 +138,10 @@ var createTests = []createTest{{
 		Mode:        0644,
 		MakeParents: true,
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "file"), []byte("data"), 0644), IsNil)
-		c.Assert(os.Link(filepath.Join(targetDir, "file"), filepath.Join(targetDir, "hardlink")), IsNil)
-		options.Link = filepath.Join(targetDir, options.Link)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		c.Assert(os.WriteFile(filepath.Join(dir, "file"), []byte("data"), 0644), IsNil)
+		c.Assert(os.Link(filepath.Join(dir, "file"), filepath.Join(dir, "hardlink")), IsNil)
+		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	result: map[string]string{
 		"/file":     "file 0644 3a6eb079",
@@ -155,10 +155,10 @@ var createTests = []createTest{{
 		Mode:        0644,
 		MakeParents: true,
 	},
-	hackopt: func(c *C, targetDir string, options *fsutil.CreateOptions) {
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "file"), []byte("data"), 0644), IsNil)
-		c.Assert(os.WriteFile(filepath.Join(targetDir, "hardlink"), []byte("data"), 0644), IsNil)
-		options.Link = filepath.Join(targetDir, options.Link)
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
+		c.Assert(os.WriteFile(filepath.Join(dir, "file"), []byte("data"), 0644), IsNil)
+		c.Assert(os.WriteFile(filepath.Join(dir, "hardlink"), []byte("data"), 0644), IsNil)
+		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	error: `path \/[^ ]*\/hardlink already exists`,
 }, {
@@ -167,7 +167,7 @@ var createTests = []createTest{{
 		Mode:         fs.ModeDir | 0775,
 		OverrideMode: true,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		c.Assert(os.Mkdir(filepath.Join(dir, "foo/"), fs.ModeDir|0765), IsNil)
 	},
 	result: map[string]string{
@@ -181,7 +181,7 @@ var createTests = []createTest{{
 		Data:         bytes.NewBufferString("whatever"),
 		OverrideMode: true,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		err := os.WriteFile(filepath.Join(dir, "foo"), []byte("data"), 0666)
 		c.Assert(err, IsNil)
 	},
@@ -195,7 +195,7 @@ var createTests = []createTest{{
 		Link: "./bar",
 		Mode: 0666 | fs.ModeSymlink,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		err := os.WriteFile(filepath.Join(dir, "foo"), []byte("data"), 0666)
 		c.Assert(err, IsNil)
 	},
@@ -209,7 +209,7 @@ var createTests = []createTest{{
 		Mode:         0776 | fs.ModeSymlink,
 		OverrideMode: true,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		err := os.WriteFile(filepath.Join(dir, "bar"), []byte("data"), 0666)
 		c.Assert(err, IsNil)
 		err = os.WriteFile(filepath.Join(dir, "foo"), []byte("data"), 0666)
@@ -227,7 +227,7 @@ var createTests = []createTest{{
 		Link: "other",
 		Mode: 0666 | fs.ModeSymlink,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		err := os.Symlink("foo", filepath.Join(dir, "bar"))
 		c.Assert(err, IsNil)
 	},
@@ -241,7 +241,7 @@ var createTests = []createTest{{
 		Link: "foo",
 		Mode: 0666 | fs.ModeSymlink,
 	},
-	hackopt: func(c *C, dir string, options *fsutil.CreateOptions) {
+	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		err := os.Symlink("foo", filepath.Join(dir, "bar"))
 		c.Assert(err, IsNil)
 	},

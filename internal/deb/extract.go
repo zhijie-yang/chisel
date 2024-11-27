@@ -312,7 +312,14 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			return err
 		}
 		tarReader := tar.NewReader(dataReader)
-		err = handlePendingHardLinks(options, pendingHardLinks, tarReader, pendingPaths)
+		extractHardLinkOptions := &extractHardLinkOptions{
+			extractOptions: options,
+			links:          pendingHardLinks,
+			tarReader:      tarReader,
+			pendingPaths:   pendingPaths,
+		}
+
+		err = handlePendingHardLinks(extractHardLinkOptions)
 		if err != nil {
 			return err
 		}
@@ -336,10 +343,16 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	return nil
 }
 
-func handlePendingHardLinks(options *ExtractOptions, pendingHardLinks map[string][]HardLinkInfo,
-	tarReader *tar.Reader, pendingPaths map[string]bool) error {
+type extractHardLinkOptions struct {
+	extractOptions *ExtractOptions
+	links          map[string][]HardLinkInfo
+	tarReader      *tar.Reader
+	pendingPaths   map[string]bool
+}
+
+func handlePendingHardLinks(opts *extractHardLinkOptions) error {
 	for {
-		tarHeader, err := tarReader.Next()
+		tarHeader, err := opts.tarReader.Next()
 		if err == io.EOF {
 			break
 		}
@@ -352,43 +365,43 @@ func handlePendingHardLinks(options *ExtractOptions, pendingHardLinks map[string
 			continue
 		}
 
-		hardLinks, ok := pendingHardLinks[sourcePath]
-		if !ok || len(hardLinks) == 0 {
+		links, ok := opts.links[sourcePath]
+		if !ok || len(links) == 0 {
 			continue
 		}
 
 		// Since the hard link target file was not extracted in the first pass,
 		// we extract the first hard link as a regular file. For the rest of
 		// the hard link entries, we link those paths to first file extracted.
-		targetPath := hardLinks[0].TargetPath
-		extractPath := filepath.Join(options.TargetDir, targetPath)
+		targetPath := links[0].TargetPath
+		extractPath := filepath.Join(opts.extractOptions.TargetDir, targetPath)
 		// Write the content for the first file in the hard link group
 		createOptions := &fsutil.CreateOptions{
 			Path: extractPath,
 			Mode: tarHeader.FileInfo().Mode(),
-			Data: tarReader,
+			Data: opts.tarReader,
 		}
 
-		err = options.Create(hardLinks[0].ExtractInfos, createOptions)
+		err = opts.extractOptions.Create(links[0].ExtractInfos, createOptions)
 		if err != nil {
 			return err
 		}
-		delete(pendingPaths, sourcePath)
-		delete(pendingPaths, targetPath)
+		delete(opts.pendingPaths, sourcePath)
+		delete(opts.pendingPaths, targetPath)
 
 		// Create the remaining hard links.
-		for _, hardLink := range hardLinks[1:] {
+		for _, link := range links[1:] {
 			createOptions := &fsutil.CreateOptions{
-				Path: filepath.Join(options.TargetDir, hardLink.TargetPath),
+				Path: filepath.Join(opts.extractOptions.TargetDir, link.TargetPath),
 				Mode: tarHeader.FileInfo().Mode(),
 				// Link to the first file extracted for the hard links.
 				Link: extractPath,
 			}
-			err := options.Create(hardLink.ExtractInfos, createOptions)
+			err := opts.extractOptions.Create(link.ExtractInfos, createOptions)
 			if err != nil {
 				return err
 			}
-			delete(pendingPaths, hardLink.TargetPath)
+			delete(opts.pendingPaths, link.TargetPath)
 		}
 	}
 	return nil
