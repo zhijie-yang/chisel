@@ -28,7 +28,9 @@ type Report struct {
 	Root string
 	// Entries holds all reported content, indexed by their path.
 	Entries map[string]ReportEntry
-	// curHardLinkId is used to allocate unique HardLinkId for hard links.
+
+	// curHardLinkId is used internally to allocate unique HardLinkId for hard
+	// links.
 	curHardLinkId int
 }
 
@@ -149,11 +151,11 @@ func (r *Report) sanitizeAbsPath(path string, isDir bool) (relPath string, err e
 	return relPath, nil
 }
 
-// entryIsHardLink determines if a link path belongs to a hard link by
-// checking if the link path has a prefix of the root path, since
-// hard links are created with absolute paths prefixing the report's root
-// path, while symlinks are created either with relative paths or absolute
-// paths that do not have the report's root path as a prefix.
+// entryIsHardLink determines if a link is a hard link by checking if the link
+// has a prefix of the root dir, since hard links are created with absolute
+// paths prefixing the report's root dir, while symlinks are created either with
+// relative paths or absolute paths that do not have the report's root dir as a
+// prefix.
 func (r *Report) entryIsHardLink(link string) bool {
 	return link != "" && strings.HasPrefix(link, r.Root)
 }

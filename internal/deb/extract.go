@@ -42,8 +42,7 @@ type ExtractInfo struct {
 type HardLinkInfo struct {
 	// The target path of the hard link logged in the tarball header.
 	TargetPath string
-	// The extract infos of the hard links to be extracted, which has
-	// the link target TargetPath.
+	// Info of the hard links to extract, which has the link target TargetPath.
 	ExtractInfos []ExtractInfo
 }
 
@@ -281,17 +280,16 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 			err := options.Create(extractInfos, createOptions)
 			if err != nil {
-				// Handle the hard link where its counterpart is not extracted
-				if tarHeader.Typeflag == tar.TypeLink && errors.Is(err, fsutil.ErrLinkTargetNotExist) {
+				if errors.Is(err, fsutil.ErrLinkTargetNotExist) && tarHeader.Typeflag == tar.TypeLink {
 					// This means that the hard link target file has not been
-					// extracted. Add the entry to the pending list.
+					// extracted. Add this hard link entry to the pending list
+					// to extract later.
 					basePath := sanitizeTarSourcePath(tarHeader.Linkname)
-					pendingHardLinks[basePath] = append(pendingHardLinks[basePath],
-						HardLinkInfo{
-							TargetPath:   targetPath,
-							ExtractInfos: extractInfos,
-						})
-					pendingPaths[basePath] = true
+					info := HardLinkInfo{
+						TargetPath:   targetPath,
+						ExtractInfos: extractInfos,
+					}
+					pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
 				} else {
 					return err
 				}
@@ -317,7 +315,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		if err != nil {
 			return err
 		}
-
 	}
 
 	if len(pendingPaths) > 0 {
@@ -359,7 +356,7 @@ func handlePendingHardLinks(options *ExtractOptions, pendingHardLinks map[string
 			continue
 		}
 
-		// Since the hard link target file is not extracted in the first pass,
+		// Since the hard link target file was not extracted in the first pass,
 		// we extract the first hard link as a regular file. For the rest of
 		// the hard link entries, we link those paths to first file extracted.
 		targetPath := hardLinks[0].TargetPath
@@ -375,7 +372,6 @@ func handlePendingHardLinks(options *ExtractOptions, pendingHardLinks map[string
 		if err != nil {
 			return err
 		}
-		delete(pendingPaths, sourcePath)
 		delete(pendingPaths, targetPath)
 
 		// Create the remaining hard links.

@@ -78,7 +78,6 @@ func Create(options *CreateOptions) (*Entry, error) {
 	}
 	mode := s.Mode()
 	if o.OverrideMode && mode != o.Mode && o.Link == "" {
-		fmt.Printf("Changing mode of %s from %#o to %#o\n", o.Path, mode, o.Mode)
 		err := os.Chmod(o.Path, o.Mode)
 		if err != nil {
 			return nil, err

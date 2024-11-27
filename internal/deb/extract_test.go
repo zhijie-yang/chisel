@@ -355,7 +355,7 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Hard link is filled with the target file",
+	summary: "Hard link is inflated with the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),

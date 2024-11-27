@@ -104,7 +104,7 @@ var createTests = []createTest{{
 }, {
 	summary: "Create a hard link",
 	options: fsutil.CreateOptions{
-		Path:        "dir/hardlink",
+		Path:        "hardlink",
 		Link:        "file",
 		Mode:        0644,
 		MakeParents: true,
@@ -122,7 +122,7 @@ var createTests = []createTest{{
 }, {
 	summary: "Cannot create a hard link if the link target does not exist",
 	options: fsutil.CreateOptions{
-		Path:        "dir/hardlink",
+		Path:        "hardlink",
 		Link:        "missing-file",
 		Mode:        0644,
 		MakeParents: true,
@@ -132,7 +132,7 @@ var createTests = []createTest{{
 	},
 	error: `link target does not exist`,
 }, {
-	summary: "Re-creating a duplicated hard link keeps the original link",
+	summary: "Hard link is not created if it already exists",
 	options: fsutil.CreateOptions{
 		Path:        "hardlink",
 		Link:        "file",
@@ -149,7 +149,7 @@ var createTests = []createTest{{
 		"/hardlink": "file 0644 3a6eb079",
 	},
 }, {
-	summary: "Cannot create a hard link if the link path exists and it is not a hard link to the target",
+	summary: "Cannot create a hard link if it exists and is not a hard link to target",
 	options: fsutil.CreateOptions{
 		Path:        "hardlink",
 		Link:        "file",
