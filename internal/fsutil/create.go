@@ -77,6 +77,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 		return nil, err
 	}
 	mode := s.Mode()
+	// Overrides mode if the entry is not a link and the mode differs.
 	if o.OverrideMode && mode != o.Mode && o.Link == "" {
 		err := os.Chmod(o.Path, o.Mode)
 		if err != nil {
