@@ -1653,7 +1653,8 @@ var slicerTests = []slicerTest{{
 		"/hardlink2.txt":     "file 0644 dcddda2e <2> {test-package_myslice}",
 	},
 }, {
-	summary: "Symlink is a valid hard link base file", slices: []setup.SliceKey{
+	summary: "Symlink is a valid hard link base file",
+	slices: []setup.SliceKey{
 		{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
 		Name: "test-package",
@@ -1682,6 +1683,60 @@ var slicerTests = []slicerTest{{
 	manifestPaths: map[string]string{
 		"/symlink":  "symlink ./dir/file <1> {test-package_myslice}",
 		"/hardlink": "symlink ./dir/file <1> {test-package_myslice}",
+	},
+}, {
+	summary: "Hard link IDs are unique to multiple packages",
+	slices: []setup.SliceKey{
+		{"test-package1", "myslice"},
+		{"test-package2", "myslice"},
+	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package1",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file1", "text for file"),
+			testutil.Hln(0644, "./hardlink1", "./dir/file1"),
+		}),
+	}, {
+		Name: "test-package2",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file2", "text for file"),
+			testutil.Hln(0644, "./hardlink2", "./dir/file2"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package1.yaml": `
+			package: test-package1
+			slices:
+				myslice:
+					contents:
+						/dir/file1:
+						/hardlink1:
+		`,
+		"slices/mydir/test-package2.yaml": `
+			package: test-package2
+			slices:
+				myslice:
+					contents:
+						/dir/file2:
+						/hardlink2:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":      "dir 0755",
+		"/dir/file1": "file 0644 28121945",
+		"/hardlink1": "file 0644 28121945",
+		"/dir/file2": "file 0644 28121945",
+		"/hardlink2": "file 0644 28121945",
+	},
+	manifestPaths: map[string]string{
+		"/dir/file1": "file 0644 28121945 <1> {test-package1_myslice}",
+		"/hardlink1": "file 0644 28121945 <1> {test-package1_myslice}",
+		"/dir/file2": "file 0644 28121945 <2> {test-package2_myslice}",
+		"/hardlink2": "file 0644 28121945 <2> {test-package2_myslice}",
 	},
 }}
 

@@ -320,7 +320,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			pendingPaths:   pendingPaths,
 		}
 
-		err = handlePendingHardLinks(extractHardLinkOptions)
+		err = extractHardLinks(extractHardLinkOptions)
 		if err != nil {
 			return err
 		}
@@ -349,7 +349,7 @@ type extractHardLinkOptions struct {
 	pendingPaths   map[string]bool
 }
 
-func handlePendingHardLinks(opts *extractHardLinkOptions) error {
+func extractHardLinks(opts *extractHardLinkOptions) error {
 	for {
 		tarHeader, err := opts.tarReader.Next()
 		if err == io.EOF {

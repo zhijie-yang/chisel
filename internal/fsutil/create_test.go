@@ -282,7 +282,8 @@ func (s *S) TestCreate(c *C) {
 		// [fsutil.Create] does not return information about parent directories
 		// created implicitly. We only check for the requested path.
 		if entry.Link != "" && entry.Mode&fs.ModeSymlink == 0 {
-			// Entry is a hard link.
+			// Entry is a hard link. We should test it differently to ensure
+			// that it produces a hard link indeed.
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)

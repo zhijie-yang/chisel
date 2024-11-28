@@ -110,7 +110,6 @@ func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
 			fsEntry.Link = ""
 		} else {
 			// The hard link links to a symlink
-			fmt.Println("FSENTRY:", fsEntry.Path, fsEntry.Link, "ENTRY:", entry.Path, entry.Link)
 			fsEntry.Link = entry.Link
 		}
 	}
