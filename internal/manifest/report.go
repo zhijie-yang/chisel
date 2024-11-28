@@ -61,7 +61,7 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	}
 
 	hardLinkId := NON_HARD_LINK
-	if r.entryIsHardLink(fsEntry.Link) {
+	if fsEntry.LinkType == fsutil.TypeHardLink {
 		hardLinkId = r.getHardLinkId(fsEntry)
 	}
 
@@ -110,6 +110,7 @@ func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
 			fsEntry.Link = ""
 		} else {
 			// The hard link links to a symlink
+			fmt.Println("FSENTRY:", fsEntry.Path, fsEntry.Link, "ENTRY:", entry.Path, entry.Link)
 			fsEntry.Link = entry.Link
 		}
 	}
@@ -150,13 +151,4 @@ func (r *Report) sanitizeAbsPath(path string, isDir bool) (relPath string, err e
 		relPath = relPath + "/"
 	}
 	return relPath, nil
-}
-
-// entryIsHardLink determines if a link is a hard link by checking if the link
-// has a prefix of the root dir, since hard links are created with absolute
-// paths prefixing the report's root dir, while symlinks are created either with
-// relative paths or absolute paths that do not have the report's root dir as a
-// prefix.
-func (r *Report) entryIsHardLink(link string) bool {
-	return link != "" && strings.HasPrefix(link, r.Root)
 }
