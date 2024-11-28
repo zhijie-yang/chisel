@@ -295,6 +295,16 @@ var generateManifestTests = []struct {
 				Size:        1234,
 				Slices:      map[*setup.Slice]bool{slice1: true},
 				FinalSHA256: "final-hash",
+				HardLinkId:  1,
+			},
+			"/hardlink": {
+				Path:        "/hardlink",
+				Mode:        0456,
+				SHA256:      "hash",
+				Size:        1234,
+				Slices:      map[*setup.Slice]bool{slice1: true},
+				FinalSHA256: "final-hash",
+				HardLinkId:  1,
 			},
 			"/link": {
 				Path:   "/link",
@@ -324,6 +334,16 @@ var generateManifestTests = []struct {
 			Size:        1234,
 			SHA256:      "hash",
 			FinalSHA256: "final-hash",
+			HardLinkId:  1,
+		}, {
+			Kind:        "path",
+			Path:        "/hardlink",
+			Mode:        "0456",
+			Slices:      []string{"package1_slice1"},
+			Size:        1234,
+			SHA256:      "hash",
+			FinalSHA256: "final-hash",
+			HardLinkId:  1,
 		}, {
 			Kind:   "path",
 			Path:   "/link",
@@ -355,6 +375,10 @@ var generateManifestTests = []struct {
 			Kind:  "content",
 			Slice: "package1_slice1",
 			Path:  "/file",
+		}, {
+			Kind:  "content",
+			Slice: "package1_slice1",
+			Path:  "/hardlink",
 		}, {
 			Kind:  "content",
 			Slice: "package1_slice1",
@@ -539,6 +563,56 @@ var generateManifestTests = []struct {
 		},
 	},
 	error: `internal error: invalid manifest: path "/dir" has invalid options: size set for directory`,
+}, {
+	summary: "Invalid path: skipped hard link ID",
+	report: &manifest.Report{
+		Root: "/",
+		Entries: map[string]manifest.ReportEntry{
+			"/file": {
+				Path:       "/file",
+				Slices:     map[*setup.Slice]bool{slice1: true},
+				HardLinkId: 2,
+			},
+		},
+	},
+	error: `internal error: invalid manifest: skipped hard link ID 1, but 2 exists`,
+}, {
+	summary: "Invalid path: hard link group has only one path",
+	report: &manifest.Report{
+		Root: "/",
+		Entries: map[string]manifest.ReportEntry{
+			"/file": {
+				Path:       "/file",
+				Slices:     map[*setup.Slice]bool{slice1: true},
+				HardLinkId: 1,
+			},
+		},
+	},
+	error: `internal error: invalid manifest: hard link group 1 has only one path: /file`,
+}, {
+	summary: "Invalid path: hard linked paths differ",
+	report: &manifest.Report{
+		Root: "/",
+		Entries: map[string]manifest.ReportEntry{
+			"/file": {
+				Path:       "/file",
+				Mode:       0456,
+				SHA256:     "hash",
+				Size:       1234,
+				Slices:     map[*setup.Slice]bool{slice1: true},
+				HardLinkId: 1,
+			},
+			"/hardlink": {
+				Path:       "/hardlink",
+				Mode:       0456,
+				SHA256:     "different-hash",
+				Size:       1234,
+				Slices:     map[*setup.Slice]bool{slice1: true},
+				HardLinkId: 1,
+			},
+		},
+	},
+	error: `internal error: invalid manifest: hard linked paths "/file" and "/hardlink" have diverging contents`,
 }, {
 	summary: "Invalid package: missing name",
 	packageInfo: []*archive.PackageInfo{{
