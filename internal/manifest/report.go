@@ -103,10 +103,10 @@ func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
 			r.Entries[relLinkPath] = entry
 		}
 		hardLinkId = entry.HardLinkId
+		fsEntry.SHA256 = entry.SHA256
+		fsEntry.Size = entry.Size
 		if fsEntry.Mode.IsRegular() {
 			// The hard link links to a regular file
-			fsEntry.SHA256 = entry.SHA256
-			fsEntry.Size = entry.Size
 			fsEntry.Link = ""
 		} else {
 			// The hard link links to a symlink
