@@ -32,7 +32,7 @@ type Report struct {
 
 	// curHardLinkId is used internally to allocate unique HardLinkId for hard
 	// links.
-	curHardLinkId uint64
+	curHardLinkId atomic.Uint64
 }
 
 const NON_HARD_LINK uint64 = 0
@@ -98,8 +98,8 @@ func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
 	relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
 	if entry, ok := r.Entries[relLinkPath]; ok {
 		if entry.HardLinkId == NON_HARD_LINK {
-			atomic.AddUint64(&r.curHardLinkId, 1)
-			entry.HardLinkId = r.curHardLinkId
+			entry.HardLinkId = r.curHardLinkId.Add(1)
+			r.curHardLinkId.Store(entry.HardLinkId)
 			r.Entries[relLinkPath] = entry
 		}
 		hardLinkId = entry.HardLinkId
