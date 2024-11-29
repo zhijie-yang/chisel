@@ -72,7 +72,7 @@ var createTests = []createTest{{
 		Path: "foo/bar",
 		Mode: fs.ModeDir | 0775,
 	},
-	error: `mkdir \/[^ ]*\/foo/bar: no such file or directory`,
+	error: `mkdir /[^ ]*/foo/bar: no such file or directory`,
 }, {
 	summary: "Re-creating an existing directory keeps the original mode",
 	options: fsutil.CreateOptions{
@@ -129,7 +129,7 @@ var createTests = []createTest{{
 	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
-	error: `link \/[^ ]*\/missing-file \/[^ ]*\/hardlink: no such file or directory`,
+	error: `link /[^ ]*/missing-file /[^ ]*/hardlink: no such file or directory`,
 }, {
 	summary: "Hard link is not created if it already exists",
 	options: fsutil.CreateOptions{
@@ -160,7 +160,7 @@ var createTests = []createTest{{
 		c.Assert(os.WriteFile(filepath.Join(dir, "hardlink"), []byte("data"), 0644), IsNil)
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
-	error: `link \/[^ ]*\/file \/[^ ]*\/hardlink: file exists`,
+	error: `link /[^ ]*/file /[^ ]*/hardlink: file exists`,
 }, {
 	options: fsutil.CreateOptions{
 		Path:         "foo",
@@ -281,9 +281,9 @@ func (s *S) TestCreate(c *C) {
 
 		// [fsutil.Create] does not return information about parent directories
 		// created implicitly. We only check for the requested path.
-		if entry.Link != "" && entry.Mode&fs.ModeSymlink == 0 {
-			// Entry is a hard link. We should test it differently to ensure
-			// that it produces a hard link indeed.
+		if entry.LinkType == fsutil.TypeHardLink {
+			// We should test hard link entries differently to ensure that it
+			// produces a hard link indeed.
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)

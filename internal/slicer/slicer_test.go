@@ -1502,7 +1502,6 @@ var slicerTests = []slicerTest{{
 					/hardlink:
 			slice2:
 				contents:
-					/dir/file:
 					/hardlink:
 	`,
 	},
@@ -1512,11 +1511,11 @@ var slicerTests = []slicerTest{{
 		"/hardlink": "file 0644 28121945",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 28121945 <1> {test-package_slice1,test-package_slice2}",
+		"/dir/file": "file 0644 28121945 <1> {test-package_slice1}",
 		"/hardlink": "file 0644 28121945 <1> {test-package_slice1,test-package_slice2}",
 	},
 }, {
-	summary: "Empty hard link is inflated with its counterpart",
+	summary: "Standalone hard links are inflated with their counterparts",
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
@@ -1546,34 +1545,6 @@ var slicerTests = []slicerTest{{
 	manifestPaths: map[string]string{
 		"/hardlink1": "file 0644 28121945 <1> {test-package_myslice}",
 		"/hardlink2": "file 0644 28121945 <1> {test-package_myslice}",
-	},
-}, {
-	summary: "Single hard link has 0 hardlink identifier",
-	slices: []setup.SliceKey{
-		{"test-package", "myslice"}},
-	pkgs: []*testutil.TestPackage{{
-		Name: "test-package",
-		Data: testutil.MustMakeDeb([]testutil.TarEntry{
-			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
-		}),
-	}},
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/hardlink:
-		`,
-	},
-	filesystem: map[string]string{
-		"/hardlink": "file 0644 28121945",
-	},
-	manifestPaths: map[string]string{
-		"/hardlink": "file 0644 28121945 {test-package_myslice}",
 	},
 }, {
 	summary: "Hard link identifier distinguishes different hard links",
@@ -1616,6 +1587,34 @@ var slicerTests = []slicerTest{{
 		"/hardlink2": "file 0644 dcddda2e <2> {test-package_myslice}",
 	},
 }, {
+	summary: "Single hard link has no hardlink identifier",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./"),
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "text for file"),
+			testutil.Hln(0644, "./hardlink", "./dir/file"),
+		}),
+	}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/hardlink:
+		`,
+	},
+	filesystem: map[string]string{
+		"/hardlink": "file 0644 28121945",
+	},
+	manifestPaths: map[string]string{
+		"/hardlink": "file 0644 28121945 {test-package_myslice}",
+	},
+}, {
 	summary: "Hard links handled with wildcard",
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"}},
@@ -1653,7 +1652,7 @@ var slicerTests = []slicerTest{{
 		"/hardlink2.txt":     "file 0644 dcddda2e <2> {test-package_myslice}",
 	},
 }, {
-	summary: "Symlink is a valid hard link base file",
+	summary: "Symlink is a valid hard link target file",
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
@@ -1685,7 +1684,7 @@ var slicerTests = []slicerTest{{
 		"/hardlink": "symlink ./dir/file <1> {test-package_myslice}",
 	},
 }, {
-	summary: "Hard link IDs are unique to multiple packages",
+	summary: "Hard link IDs are unique across packages",
 	slices: []setup.SliceKey{
 		{"test-package1", "myslice"},
 		{"test-package2", "myslice"},

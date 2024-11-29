@@ -282,7 +282,7 @@ var reportTests = []struct {
 	mutate:  []*fsutil.Entry{&sampleDir},
 	err:     `cannot mutate path in report: /example-dir/ is a directory`,
 }, {
-	summary: "Regular file hard link",
+	summary: "Hard link to regular file",
 	add: []sliceAndEntry{
 		{entry: sampleFile, slice: oneSlice},
 		{entry: sampleHardLinkReg, slice: oneSlice}},
@@ -293,7 +293,6 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
 			HardLinkId: 1,
 		},
 		"/example-hard-link-reg": {
@@ -302,11 +301,11 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
 			HardLinkId: 1,
-		}},
+		},
+	},
 }, {
-	summary: "Symlink hard link",
+	summary: "Hard link to symlink",
 	add: []sliceAndEntry{
 		{entry: sampleLink, slice: oneSlice},
 		{entry: sampleHardLinkSym, slice: oneSlice}},
@@ -328,32 +327,33 @@ var reportTests = []struct {
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
 			Link:       "/base/example-file",
 			HardLinkId: 1,
-		}},
-}, {
-	summary: "Multiple hard links",
-	add: []sliceAndEntry{
-		{entry: sampleFile, slice: oneSlice},
-		{entry: sampleHardLinkReg, slice: oneSlice},
-		{
-			entry: fsutil.Entry{
-				Path:   "/base/another-example-file",
-				Mode:   0777,
-				SHA256: "another-example-file_hash",
-				Size:   5678,
-				Link:   "",
-			},
-			slice: oneSlice,
-		},
-		{
-			entry: fsutil.Entry{
-				Path:     "/base/another-example-hard-link-reg",
-				Mode:     sampleFile.Mode,
-				Link:     "/base/another-example-file",
-				LinkType: fsutil.TypeHardLink,
-			},
-			slice: oneSlice,
 		},
 	},
+}, {
+	summary: "Multiple hard links",
+	add: []sliceAndEntry{{
+		entry: sampleFile,
+		slice: oneSlice,
+	}, {
+		entry: sampleHardLinkReg,
+		slice: oneSlice,
+	}, {
+		entry: fsutil.Entry{
+			Path:   "/base/another-example-file",
+			Mode:   0777,
+			SHA256: "another-example-file_hash",
+			Size:   5678,
+		},
+		slice: otherSlice,
+	}, {
+		entry: fsutil.Entry{
+			Path:     "/base/another-example-hard-link-reg",
+			Mode:     sampleFile.Mode,
+			Link:     "/base/another-example-file",
+			LinkType: fsutil.TypeHardLink,
+		},
+		slice: otherSlice,
+	}},
 	expected: map[string]manifest.ReportEntry{
 		"/example-file": {
 			Path:       "/example-file",
@@ -361,7 +361,6 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
 			HardLinkId: 1,
 		},
 		"/example-hard-link-reg": {
@@ -370,7 +369,6 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
 			HardLinkId: 1,
 		},
 		"/another-example-file": {
@@ -378,8 +376,7 @@ var reportTests = []struct {
 			Mode:       0777,
 			SHA256:     "another-example-file_hash",
 			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
+			Slices:     map[*setup.Slice]bool{otherSlice: true},
 			HardLinkId: 2,
 		},
 		"/another-example-hard-link-reg": {
@@ -387,10 +384,51 @@ var reportTests = []struct {
 			Mode:       sampleFile.Mode,
 			SHA256:     "another-example-file_hash",
 			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "",
+			Slices:     map[*setup.Slice]bool{otherSlice: true},
 			HardLinkId: 2,
-		}},
+		},
+	},
+}, {
+	summary: "Hard links to same file in different slices",
+	add: []sliceAndEntry{{
+		entry: sampleFile, slice: oneSlice,
+	}, {
+		entry: sampleHardLinkReg, slice: oneSlice,
+	}, {
+		entry: fsutil.Entry{
+			Path:     "/base/another-hard-link-reg",
+			Mode:     sampleFile.Mode,
+			Link:     "/base/example-file",
+			LinkType: fsutil.TypeHardLink,
+		},
+		slice: otherSlice,
+	}},
+	expected: map[string]manifest.ReportEntry{
+		"/example-file": {
+			Path:       "/example-file",
+			Mode:       0777,
+			SHA256:     "example-file_hash",
+			Size:       5678,
+			Slices:     map[*setup.Slice]bool{oneSlice: true},
+			HardLinkId: 1,
+		},
+		"/example-hard-link-reg": {
+			Path:       "/example-hard-link-reg",
+			Mode:       sampleFile.Mode,
+			SHA256:     "example-file_hash",
+			Size:       5678,
+			Slices:     map[*setup.Slice]bool{oneSlice: true},
+			HardLinkId: 1,
+		},
+		"/another-hard-link-reg": {
+			Path:       "/another-hard-link-reg",
+			Mode:       sampleFile.Mode,
+			SHA256:     "example-file_hash",
+			Size:       5678,
+			Slices:     map[*setup.Slice]bool{otherSlice: true},
+			HardLinkId: 1,
+		},
+	},
 }}
 
 func (s *S) TestReport(c *C) {

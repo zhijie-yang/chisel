@@ -36,12 +36,14 @@ var readManifestTests = []struct {
 		{"kind":"content","slice":"pkg1_manifest","path":"/manifest/manifest.wall"}
 		{"kind":"content","slice":"pkg1_myslice","path":"/dir/file"}
 		{"kind":"content","slice":"pkg1_myslice","path":"/dir/foo/bar/"}
+		{"kind":"content","slice":"pkg1_myslice","path":"/dir/hardlink/file"}
 		{"kind":"content","slice":"pkg1_myslice","path":"/dir/link/file"}
 		{"kind":"content","slice":"pkg2_myotherslice","path":"/dir/foo/bar/"}
 		{"kind":"package","name":"pkg1","version":"v1","sha256":"hash1","arch":"arch1"}
 		{"kind":"package","name":"pkg2","version":"v2","sha256":"hash2","arch":"arch2"}
-		{"kind":"path","path":"/dir/file","mode":"0644","slices":["pkg1_myslice"],"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","final_sha256":"8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6","size":21}
+		{"kind":"path","path":"/dir/file","mode":"0644","slices":["pkg1_myslice"],"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","final_sha256":"8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6","size":21,"hard_link_id":1}
 		{"kind":"path","path":"/dir/foo/bar/","mode":"01777","slices":["pkg2_myotherslice","pkg1_myslice"]}
+		{"kind":"path","path":"/dir/hardlink/file","mode":"0644","slices":["pkg1_myslice"],"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","final_sha256":"8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6","size":21,"hard_link_id":1}
 		{"kind":"path","path":"/dir/link/file","mode":"0644","slices":["pkg1_myslice"],"link":"/dir/file"}
 		{"kind":"path","path":"/manifest/manifest.wall","mode":"0644","slices":["pkg1_manifest"]}
 		{"kind":"slice","name":"pkg1_manifest"}
@@ -50,8 +52,9 @@ var readManifestTests = []struct {
 	`,
 	mfest: &manifestContents{
 		Paths: []*manifest.Path{
-			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: ""},
+			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkId: 1},
 			{Kind: "path", Path: "/dir/foo/bar/", Mode: "01777", Slices: []string{"pkg2_myotherslice", "pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
+			{Kind: "path", Path: "/dir/hardlink/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkId: 1},
 			{Kind: "path", Path: "/dir/link/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: "/dir/file"},
 			{Kind: "path", Path: "/manifest/manifest.wall", Mode: "0644", Slices: []string{"pkg1_manifest"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
 		},
@@ -68,6 +71,7 @@ var readManifestTests = []struct {
 			{Kind: "content", Slice: "pkg1_manifest", Path: "/manifest/manifest.wall"},
 			{Kind: "content", Slice: "pkg1_myslice", Path: "/dir/file"},
 			{Kind: "content", Slice: "pkg1_myslice", Path: "/dir/foo/bar/"},
+			{Kind: "content", Slice: "pkg1_myslice", Path: "/dir/hardlink/file"},
 			{Kind: "content", Slice: "pkg1_myslice", Path: "/dir/link/file"},
 			{Kind: "content", Slice: "pkg2_myotherslice", Path: "/dir/foo/bar/"},
 		},
