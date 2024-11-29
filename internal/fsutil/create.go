@@ -44,6 +44,8 @@ type Entry struct {
 
 // Create creates a filesystem entry according to the provided options and returns
 // the information about the created entry.
+//
+// Create returns errors from the os package.
 func Create(options *CreateOptions) (*Entry, error) {
 	rp := &readerProxy{inner: options.Data, h: sha256.New()}
 	// Use the proxy instead of the raw Reader.
@@ -183,28 +185,23 @@ func createSymlink(o *CreateOptions) error {
 	return os.Symlink(o.Link, o.Path)
 }
 
-var ErrLinkTargetNotExist = fmt.Errorf("link target does not exist")
-
 func createHardLink(o *CreateOptions) error {
 	debugf("Creating hard link: %s => %s", o.Path, o.Link)
-	linkInfo, err := os.Lstat(o.Link)
-	if err != nil && os.IsNotExist(err) {
-		return ErrLinkTargetNotExist
-	} else if err != nil {
-		return err
-	}
-
-	pathInfo, err := os.Lstat(o.Path)
-	if err == nil || os.IsExist(err) {
+	err := os.Link(o.Link, o.Path)
+	if err != nil && os.IsExist(err) {
+		linkInfo, serr := os.Lstat(o.Link)
+		if serr != nil {
+			return serr
+		}
+		pathInfo, serr := os.Lstat(o.Path)
+		if serr != nil {
+			return serr
+		}
 		if os.SameFile(linkInfo, pathInfo) {
 			return nil
 		}
-		return fmt.Errorf("path %s already exists", o.Path)
-	} else if !os.IsNotExist(err) {
-		return err
 	}
-
-	return os.Link(o.Link, o.Path)
+	return err
 }
 
 // readerProxy implements the io.Reader interface proxying the calls to its

@@ -129,7 +129,7 @@ var createTests = []createTest{{
 	hackopt: func(c *C, dir string, opts *fsutil.CreateOptions) {
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
-	error: `link target does not exist`,
+	error: `link \/[^ ]*\/missing-file \/[^ ]*\/hardlink: no such file or directory`,
 }, {
 	summary: "Hard link is not created if it already exists",
 	options: fsutil.CreateOptions{
@@ -160,7 +160,7 @@ var createTests = []createTest{{
 		c.Assert(os.WriteFile(filepath.Join(dir, "hardlink"), []byte("data"), 0644), IsNil)
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
-	error: `path \/[^ ]*\/hardlink already exists`,
+	error: `link \/[^ ]*\/file \/[^ ]*\/hardlink: file exists`,
 }, {
 	options: fsutil.CreateOptions{
 		Path:         "foo",

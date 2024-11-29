@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -280,21 +279,19 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 				OverrideMode: true,
 			}
 			err := options.Create(extractInfos, createOptions)
-			if err != nil {
-				if errors.Is(err, fsutil.ErrLinkTargetNotExist) && tarHeader.Typeflag == tar.TypeLink {
-					// This means that the hard link target file has not been
-					// extracted. Add this hard link entry to the pending list
-					// to extract later.
-					basePath := sanitizeTarSourcePath(tarHeader.Linkname)
-					info := HardLinkInfo{
-						TargetPath:   targetPath,
-						ExtractInfos: extractInfos,
-					}
-					pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
-					pendingPaths[basePath] = true
-				} else {
-					return err
+			if err != nil && os.IsNotExist(err) && tarHeader.Typeflag == tar.TypeLink {
+				// This means that the hard link target file has not been
+				// extracted. Add this hard link entry to the pending list
+				// to extract later.
+				basePath := sanitizeTarSourcePath(tarHeader.Linkname)
+				info := HardLinkInfo{
+					TargetPath:   targetPath,
+					ExtractInfos: extractInfos,
 				}
+				pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
+				pendingPaths[basePath] = true
+			} else if err != nil {
+				return err
 			}
 		}
 	}
