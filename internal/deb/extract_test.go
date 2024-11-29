@@ -409,7 +409,7 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": no content at \/non-existing-target`,
+	error: `cannot extract from package "test-package": hard link target missing: /hardlink -> /non-existing-target`,
 }, {
 	summary: "Hard link to symlink does not follow symlink",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{

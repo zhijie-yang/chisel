@@ -130,7 +130,6 @@ func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
 }
 
 func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
-
 	dataReader, err := getDataReader(pkgReader)
 	if err != nil {
 		return err
@@ -289,7 +288,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 					ExtractInfos: extractInfos,
 				}
 				pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
-				pendingPaths[basePath] = true
 			} else if err != nil {
 				return err
 			}
@@ -314,9 +312,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			extractOptions: options,
 			links:          pendingHardLinks,
 			tarReader:      tarReader,
-			pendingPaths:   pendingPaths,
 		}
-
 		err = extractHardLinks(extractHardLinkOptions)
 		if err != nil {
 			return err
@@ -343,7 +339,6 @@ type extractHardLinkOptions struct {
 	extractOptions *ExtractOptions
 	links          map[string][]HardLinkInfo
 	tarReader      *tar.Reader
-	pendingPaths   map[string]bool
 }
 
 func extractHardLinks(opts *extractHardLinkOptions) error {
@@ -363,6 +358,7 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 
 		links, ok := opts.links[sourcePath]
 		if !ok || len(links) == 0 {
+			delete(opts.links, sourcePath)
 			continue
 		}
 
@@ -377,13 +373,10 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 			Mode: tarHeader.FileInfo().Mode(),
 			Data: opts.tarReader,
 		}
-
 		err = opts.extractOptions.Create(links[0].ExtractInfos, createOptions)
 		if err != nil {
 			return err
 		}
-		delete(opts.pendingPaths, sourcePath)
-		delete(opts.pendingPaths, targetPath)
 
 		// Create the remaining hard links.
 		for _, link := range links[1:] {
@@ -397,9 +390,26 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 			if err != nil {
 				return err
 			}
-			delete(opts.pendingPaths, link.TargetPath)
 		}
+		delete(opts.links, sourcePath)
 	}
+
+	// If there are pending links, that means the link targets do not come from
+	// this package.
+	if len(opts.links) > 0 {
+		var sLinks []string
+		for target, links := range opts.links {
+			for _, link := range links {
+				sLinks = append(sLinks, link.TargetPath+" -> "+target)
+			}
+		}
+		if len(sLinks) == 1 {
+			return fmt.Errorf("hard link target missing: %s", sLinks[0])
+		}
+		sort.Strings(sLinks)
+		return fmt.Errorf("hard link targets missing:\n- %s", strings.Join(sLinks, "\n- "))
+	}
+
 	return nil
 }
 
