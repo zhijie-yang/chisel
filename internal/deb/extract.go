@@ -151,6 +151,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		}
 	}
 
+	// Store the hard links we cannot extract in the first iteration over the
+	// tarball.
 	pendingHardLinks := make(map[string][]HardLinkInfo)
 
 	// When creating a file we will iterate through its parent directories and
@@ -310,7 +312,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		tarReader := tar.NewReader(dataReader)
 		extractHardLinkOptions := &extractHardLinkOptions{
 			extractOptions: options,
-			links:          pendingHardLinks,
+			pendingLinks:   pendingHardLinks,
 			tarReader:      tarReader,
 		}
 		err = extractHardLinks(extractHardLinkOptions)
@@ -337,7 +339,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 
 type extractHardLinkOptions struct {
 	extractOptions *ExtractOptions
-	links          map[string][]HardLinkInfo
+	pendingLinks   map[string][]HardLinkInfo
 	tarReader      *tar.Reader
 }
 
@@ -356,9 +358,9 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 			continue
 		}
 
-		links, ok := opts.links[sourcePath]
+		links, ok := opts.pendingLinks[sourcePath]
 		if !ok || len(links) == 0 {
-			delete(opts.links, sourcePath)
+			delete(opts.pendingLinks, sourcePath)
 			continue
 		}
 
@@ -391,14 +393,14 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 				return err
 			}
 		}
-		delete(opts.links, sourcePath)
+		delete(opts.pendingLinks, sourcePath)
 	}
 
 	// If there are pending links, that means the link targets do not come from
 	// this package.
-	if len(opts.links) > 0 {
+	if len(opts.pendingLinks) > 0 {
 		var sLinks []string
-		for target, links := range opts.links {
+		for target, links := range opts.pendingLinks {
 			for _, link := range links {
 				sLinks = append(sLinks, link.LinkPath+" -> "+target)
 			}
