@@ -37,7 +37,7 @@ func (a *TestArchive) Fetch(pkgName string) (io.ReadSeekCloser, *archive.Package
 		SHA256:  pkg.Hash,
 		Arch:    pkg.Arch,
 	}
-	return ReadSeekerNopCloser(bytes.NewReader(pkg.Data)), info, nil
+	return ReadSeekNopCloser(bytes.NewReader(pkg.Data)), info, nil
 }
 
 func (a *TestArchive) Exists(pkg string) bool {
