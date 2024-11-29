@@ -345,7 +345,7 @@ func fastValidate(options *WriteOptions) (err error) {
 				return fmt.Errorf("path %q refers to missing slice %s", entry.Path, slice.String())
 			}
 		}
-		if entry.HardLinkId != NON_HARD_LINK {
+		if entry.HardLinkId != 0 {
 			e := entry
 			hardLinkGroups[e.HardLinkId] = append(hardLinkGroups[e.HardLinkId], &e)
 		}

@@ -19,7 +19,8 @@ type ReportEntry struct {
 	Slices      map[*setup.Slice]bool
 	Link        string
 	FinalSHA256 string
-	HardLinkId  uint64
+	// If HardLinkId is greater than 0, the entry belongs to a hard link group.
+	HardLinkId uint64
 }
 
 // Report holds the information about files and directories created when slicing
@@ -34,8 +35,6 @@ type Report struct {
 	// links.
 	curHardLinkId atomic.Uint64
 }
-
-const NON_HARD_LINK uint64 = 0
 
 // NewReport returns an empty report for content that will be based at the
 // provided root path.
@@ -60,16 +59,32 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		return fmt.Errorf("cannot add path to report: %s", err)
 	}
 
-	hardLinkId := NON_HARD_LINK
+	var hardLinkId uint64
+	// Copy the fsEntry.Link to avoid overwriting it when an fsEntry maps to
+	// multiple slices.
+	link := fsEntry.Link
 	if fsEntry.LinkType == fsutil.TypeHardLink {
-		hardLinkId = r.getHardLinkId(fsEntry)
+		relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
+		entry, ok := r.Entries[relLinkPath]
+		if !ok {
+			return fmt.Errorf("cannot add hard link %s to report: target %s not previously added", relPath, relLinkPath)
+		}
+		if entry.HardLinkId == 0 {
+			entry.HardLinkId = r.curHardLinkId.Add(1)
+			r.curHardLinkId.Store(entry.HardLinkId)
+			r.Entries[relLinkPath] = entry
+		}
+		hardLinkId = entry.HardLinkId
+		fsEntry.SHA256 = entry.SHA256
+		fsEntry.Size = entry.Size
+		link = entry.Link
 	}
 
 	if entry, ok := r.Entries[relPath]; ok {
 		if fsEntry.Mode != entry.Mode {
 			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntry.Mode, entry.Mode)
-		} else if fsEntry.Link != entry.Link {
-			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, fsEntry.Link, entry.Link)
+		} else if link != entry.Link {
+			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, link, entry.Link)
 		} else if fsEntry.Size != entry.Size {
 			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, fsEntry.Size, entry.Size)
 		} else if fsEntry.SHA256 != entry.SHA256 {
@@ -84,37 +99,11 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 			SHA256:     fsEntry.SHA256,
 			Size:       fsEntry.Size,
 			Slices:     map[*setup.Slice]bool{slice: true},
-			Link:       fsEntry.Link,
+			Link:       link,
 			HardLinkId: hardLinkId,
 		}
 	}
 	return nil
-}
-
-// getHardLinkId mutates the fsEntry for the creation of the report entry
-// and returns the hard link id.
-func (r *Report) getHardLinkId(fsEntry *fsutil.Entry) uint64 {
-	hardLinkId := NON_HARD_LINK
-	relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
-	if entry, ok := r.Entries[relLinkPath]; ok {
-		if entry.HardLinkId == NON_HARD_LINK {
-			entry.HardLinkId = r.curHardLinkId.Add(1)
-			r.curHardLinkId.Store(entry.HardLinkId)
-			r.Entries[relLinkPath] = entry
-		}
-		hardLinkId = entry.HardLinkId
-		fsEntry.SHA256 = entry.SHA256
-		fsEntry.Size = entry.Size
-		if fsEntry.Mode.IsRegular() {
-			// The hard link links to a regular file
-			fsEntry.Link = ""
-		} else {
-			// The hard link links to a symlink
-			fsEntry.Link = entry.Link
-		}
-	}
-
-	return hardLinkId
 }
 
 // Mutate updates the FinalSHA256 and Size of an existing path entry.

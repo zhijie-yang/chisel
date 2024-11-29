@@ -1908,7 +1908,7 @@ func treeDumpManifestPaths(mfest *manifest.Manifest) (map[string]string, error) 
 
 		// Append <hardLinkId> to the end of the path dump when it represents
 		// a valid hard link group.
-		if path.HardLinkId != manifest.NON_HARD_LINK {
+		if path.HardLinkId != 0 {
 			fsDump = fmt.Sprintf("%s <%d>", fsDump, path.HardLinkId)
 		}
 
