@@ -127,7 +127,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	if err != nil {
 		return err
 	}
-	defer dataReader.Close()
 
 	oldUmask := syscall.Umask(0)
 	defer func() {
@@ -285,6 +284,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		}
 	}
 
+	dataReader.Close()
+
 	// Go over the tarball again to textract the pending hard links.
 	if len(pendingHardLinks) > 0 {
 		offset, err := pkgReader.Seek(0, io.SeekStart)
@@ -298,6 +299,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		if err != nil {
 			return err
 		}
+		defer dataReader.Close()
 		tarReader := tar.NewReader(dataReader)
 		extractHardLinkOptions := &extractHardLinkOptions{
 			ExtractOptions: options,
