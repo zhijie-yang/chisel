@@ -359,7 +359,7 @@ var extractTests = []extractTest{{
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
-		testutil.Hln(0644, "./hardlink", "./file"),
+		testutil.Hlk(0644, "./hardlink", "./file"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -381,8 +381,8 @@ var extractTests = []extractTest{{
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
-		testutil.Hln(0644, "./hardlink1", "./file"),
-		testutil.Hln(0644, "./hardlink2", "./file"),
+		testutil.Hlk(0644, "./hardlink1", "./file"),
+		testutil.Hlk(0644, "./hardlink2", "./file"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -400,7 +400,7 @@ var extractTests = []extractTest{{
 	summary: "Dangling hard link",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
-		testutil.Hln(0644, "./hardlink", "./non-existing-target"),
+		testutil.Hlk(0644, "./hardlink", "./non-existing-target"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
@@ -415,7 +415,7 @@ var extractTests = []extractTest{{
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Lnk(0644, "./symlink", "./file"),
-		testutil.Hln(0644, "./hardlink", "./symlink"),
+		testutil.Hlk(0644, "./hardlink", "./symlink"),
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{

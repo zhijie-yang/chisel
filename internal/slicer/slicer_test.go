@@ -1489,7 +1489,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1524,8 +1524,8 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink1", "./dir/file"),
-			testutil.Hln(0644, "./hardlink2", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink1", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink2", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1557,8 +1557,8 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file1", "text for file1"),
 			testutil.Reg(0644, "./dir/file2", "text for file2"),
-			testutil.Hln(0644, "./hardlink1", "./dir/file1"),
-			testutil.Hln(0644, "./hardlink2", "./dir/file2"),
+			testutil.Hlk(0644, "./hardlink1", "./dir/file1"),
+			testutil.Hlk(0644, "./hardlink2", "./dir/file2"),
 		}),
 	}},
 	release: map[string]string{
@@ -1596,7 +1596,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1625,7 +1625,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
 			testutil.Lnk(0644, "./symlink", "./dir/file"),
-			testutil.Hln(0644, "./hardlink", "./symlink"),
+			testutil.Hlk(0644, "./hardlink", "./symlink"),
 		}),
 	}},
 	release: map[string]string{
@@ -1658,7 +1658,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file1", "text for file"),
-			testutil.Hln(0644, "./hardlink1", "./dir/file1"),
+			testutil.Hlk(0644, "./hardlink1", "./dir/file1"),
 		}),
 	}, {
 		Name: "test-package2",
@@ -1666,7 +1666,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file2", "text for file"),
-			testutil.Hln(0644, "./hardlink2", "./dir/file2"),
+			testutil.Hlk(0644, "./hardlink2", "./dir/file2"),
 		}),
 	}},
 	release: map[string]string{
@@ -1710,7 +1710,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1736,7 +1736,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1768,7 +1768,7 @@ var slicerTests = []slicerTest{{
 			testutil.Dir(0755, "./"),
 			testutil.Dir(0755, "./dir/"),
 			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hln(0644, "./hardlink", "./dir/file"),
+			testutil.Hlk(0644, "./hardlink", "./dir/file"),
 		}),
 	}},
 	release: map[string]string{
