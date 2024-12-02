@@ -52,14 +52,14 @@ var sampleHardLinkReg = fsutil.Entry{
 	Path:     "/base/example-hard-link-reg",
 	Mode:     sampleFile.Mode,
 	Link:     "/base/example-file",
-	LinkType: fsutil.TypeHardLink,
+	HardLink: true,
 }
 
 var sampleHardLinkSym = fsutil.Entry{
 	Path:     "/base/example-hard-link-sym",
 	Mode:     fs.ModeSymlink | sampleFile.Mode,
 	Link:     "/base/example-link",
-	LinkType: fsutil.TypeHardLink,
+	HardLink: true,
 }
 
 var sampleFileMutated = fsutil.Entry{
@@ -350,7 +350,7 @@ var reportTests = []struct {
 			Path:     "/base/another-example-hard-link-reg",
 			Mode:     sampleFile.Mode,
 			Link:     "/base/another-example-file",
-			LinkType: fsutil.TypeHardLink,
+			HardLink: true,
 		},
 		slice: otherSlice,
 	}},
@@ -399,7 +399,7 @@ var reportTests = []struct {
 			Path:     "/base/another-hard-link-reg",
 			Mode:     sampleFile.Mode,
 			Link:     "/base/example-file",
-			LinkType: fsutil.TypeHardLink,
+			HardLink: true,
 		},
 		slice: otherSlice,
 	}},

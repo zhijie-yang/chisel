@@ -63,7 +63,7 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	// Copy the fsEntry.Link to avoid overwriting it when an fsEntry maps to
 	// multiple slices.
 	link := fsEntry.Link
-	if fsEntry.LinkType == fsutil.TypeHardLink {
+	if fsEntry.HardLink {
 		relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
 		entry, ok := r.Entries[relLinkPath]
 		if !ok {

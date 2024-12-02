@@ -162,6 +162,7 @@ var createTests = []createTest{{
 	},
 	error: `link /[^ ]*/file /[^ ]*/hardlink: file exists`,
 }, {
+	summary: "The mode of a dir can be overridden",
 	options: fsutil.CreateOptions{
 		Path:         "foo",
 		Mode:         fs.ModeDir | 0775,
@@ -175,6 +176,7 @@ var createTests = []createTest{{
 		"/foo/": "dir 0775",
 	},
 }, {
+	summary: "The mode of a file can be overridden",
 	options: fsutil.CreateOptions{
 		Path:         "foo",
 		Mode:         0775,
@@ -190,6 +192,7 @@ var createTests = []createTest{{
 		"/foo": "file 0775 85738f8f",
 	},
 }, {
+	summary: "The mode of a symlink cannot be overridden",
 	options: fsutil.CreateOptions{
 		Path: "foo",
 		Link: "./bar",
@@ -203,6 +206,7 @@ var createTests = []createTest{{
 		"/foo": "symlink ./bar",
 	},
 }, {
+	summary: "The mode of a symlink target is not overridden by the symlink",
 	options: fsutil.CreateOptions{
 		Path:         "foo",
 		Link:         "./bar",
@@ -221,6 +225,7 @@ var createTests = []createTest{{
 		"/bar": "file 0666 3a6eb079",
 	},
 }, {
+	summary: "The target of an existing symlink can be overridden",
 	options: fsutil.CreateOptions{
 		Path: "bar",
 		// Existing link with different target.
@@ -235,6 +240,7 @@ var createTests = []createTest{{
 		"/bar": "symlink other",
 	},
 }, {
+	summary: "Same symlink can be overwritten",
 	options: fsutil.CreateOptions{
 		Path: "bar",
 		// Existing link with same target.
@@ -281,7 +287,7 @@ func (s *S) TestCreate(c *C) {
 
 		// [fsutil.Create] does not return information about parent directories
 		// created implicitly. We only check for the requested path.
-		if entry.LinkType == fsutil.TypeHardLink {
+		if entry.HardLink {
 			// We should test hard link entries differently to ensure that it
 			// produces a hard link indeed.
 			pathInfo, err := os.Lstat(entry.Path)

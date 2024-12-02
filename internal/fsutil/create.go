@@ -26,26 +26,19 @@ type CreateOptions struct {
 	OverrideMode bool
 }
 
-// The following constants are used to distinguish different link types,
-// such as hard links and symlinks.
-const (
-	TypeSymlink = 1 << iota
-	TypeHardLink
-)
-
 type Entry struct {
 	Path     string
 	Mode     fs.FileMode
 	SHA256   string
 	Size     int
 	Link     string
-	LinkType int
+	HardLink bool
 }
 
 // Create creates a filesystem entry according to the provided options and returns
 // the information about the created entry.
 //
-// Create returns errors from the os package.
+// Create can return errors from the os package.
 func Create(options *CreateOptions) (*Entry, error) {
 	rp := &readerProxy{inner: options.Data, h: sha256.New()}
 	// Use the proxy instead of the raw Reader.
@@ -55,7 +48,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 
 	var err error
 	var hash string
-	var linkType int
+	var linkType bool
 	if o.MakeParents {
 		if err := os.MkdirAll(filepath.Dir(o.Path), 0755); err != nil {
 			return nil, err
@@ -68,7 +61,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 			// Creating the hard link does not involve reading the file.
 			// Therefore, its size and hash is not calculated here.
 			err = createHardLink(o)
-			linkType = TypeHardLink
+			linkType = true
 		} else {
 			err = createFile(o)
 			hash = hex.EncodeToString(rp.h.Sum(nil))
@@ -77,7 +70,6 @@ func Create(options *CreateOptions) (*Entry, error) {
 		err = createDir(o)
 	case fs.ModeSymlink:
 		err = createSymlink(o)
-		linkType = TypeSymlink
 	default:
 		err = fmt.Errorf("unsupported file type: %s", o.Path)
 	}
@@ -105,7 +97,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 		SHA256:   hash,
 		Size:     rp.size,
 		Link:     o.Link,
-		LinkType: linkType,
+		HardLink: linkType,
 	}
 	return entry, nil
 }
