@@ -38,13 +38,6 @@ type ExtractInfo struct {
 	Context  any
 }
 
-type HardLinkInfo struct {
-	// The path of the hard link recorded in the tarball header.
-	LinkPath string
-	// Info of the hard links to extract, which has the link target LinkPath.
-	ExtractInfos []ExtractInfo
-}
-
 func getValidOptions(options *ExtractOptions) (*ExtractOptions, error) {
 	for extractPath, extractInfos := range options.Extract {
 		isGlob := strings.ContainsAny(extractPath, "*?")
@@ -152,8 +145,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	}
 
 	// Store the hard links we cannot extract in the first iteration over the
-	// tarball.
-	pendingHardLinks := make(map[string][]HardLinkInfo)
+	// tarball. These hard link will be extracted in extractHardLinks.
+	pendingHardLinks := make(map[string][]pendingHardLink)
 
 	// When creating a file we will iterate through its parent directories and
 	// create them with the permissions defined in the tarball.
@@ -172,11 +165,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			return err
 		}
 
-		sourcePath := tarHeader.Name
-		if len(sourcePath) < 3 || sourcePath[0] != '.' || sourcePath[1] != '/' {
-			continue
-		}
-		sourcePath = sourcePath[1:]
+		sourcePath := sanitizeTarPath(tarHeader.Name)
 		if sourcePath == "" {
 			continue
 		}
@@ -264,13 +253,13 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 					return err
 				}
 			}
-			// Create the entry itself.
 			link := tarHeader.Linkname
 			if tarHeader.Typeflag == tar.TypeLink {
 				// A hard link requires the real path of the target file.
 				link = filepath.Join(options.TargetDir, link)
 			}
 
+			// Create the entry itself.
 			createOptions := &fsutil.CreateOptions{
 				Path:         filepath.Join(options.TargetDir, targetPath),
 				Mode:         tarHeader.FileInfo().Mode(),
@@ -284,8 +273,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 				// This means that the hard link target file has not been
 				// extracted. Add this hard link entry to the pending list
 				// to extract later.
-				basePath := sanitizeTarSourcePath(tarHeader.Linkname)
-				info := HardLinkInfo{
+				basePath := sanitizeTarPath(tarHeader.Linkname)
+				info := pendingHardLink{
 					LinkPath:     targetPath,
 					ExtractInfos: extractInfos,
 				}
@@ -303,7 +292,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			return err
 		}
 		if offset != 0 {
-			return fmt.Errorf("cannot seek to the beginning of the package")
+			return fmt.Errorf("internal error: cannot seek to the beginning of the package")
 		}
 		dataReader, err = getDataReader(pkgReader)
 		if err != nil {
@@ -311,11 +300,10 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		}
 		tarReader := tar.NewReader(dataReader)
 		extractHardLinkOptions := &extractHardLinkOptions{
-			extractOptions: options,
+			ExtractOptions: options,
 			pendingLinks:   pendingHardLinks,
-			tarReader:      tarReader,
 		}
-		err = extractHardLinks(extractHardLinkOptions)
+		err = extractHardLinks(tarReader, extractHardLinkOptions)
 		if err != nil {
 			return err
 		}
@@ -337,15 +325,24 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	return nil
 }
 
-type extractHardLinkOptions struct {
-	extractOptions *ExtractOptions
-	pendingLinks   map[string][]HardLinkInfo
-	tarReader      *tar.Reader
+type pendingHardLink struct {
+	LinkPath     string
+	ExtractInfos []ExtractInfo
 }
 
-func extractHardLinks(opts *extractHardLinkOptions) error {
+type extractHardLinkOptions struct {
+	*ExtractOptions
+	pendingLinks map[string][]pendingHardLink
+}
+
+// extractHardLinks iterate through the tarball the second time to extract the
+// hard links that were not extracted in the first pass.
+// The first hard link for each link target is extracted as a file with identical
+// content to the link target, and the rest of the hard links are created as hard
+// links to the first file extracted.
+func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error {
 	for {
-		tarHeader, err := opts.tarReader.Next()
+		tarHeader, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
@@ -353,29 +350,25 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 			return err
 		}
 
-		sourcePath := sanitizeTarSourcePath(tarHeader.Name)
+		sourcePath := sanitizeTarPath(tarHeader.Name)
 		if sourcePath == "" {
 			continue
 		}
 
 		links, ok := opts.pendingLinks[sourcePath]
 		if !ok || len(links) == 0 {
-			delete(opts.pendingLinks, sourcePath)
 			continue
 		}
 
-		// Since the hard link target file was not extracted in the first pass,
-		// we extract the first hard link as a regular file. For the rest of
-		// the hard link entries, we link those paths to first file extracted.
 		targetPath := links[0].LinkPath
-		extractPath := filepath.Join(opts.extractOptions.TargetDir, targetPath)
+		extractPath := filepath.Join(opts.TargetDir, targetPath)
 		// Write the content for the first file in the hard link group
 		createOptions := &fsutil.CreateOptions{
 			Path: extractPath,
 			Mode: tarHeader.FileInfo().Mode(),
-			Data: opts.tarReader,
+			Data: tarReader,
 		}
-		err = opts.extractOptions.Create(links[0].ExtractInfos, createOptions)
+		err = opts.Create(links[0].ExtractInfos, createOptions)
 		if err != nil {
 			return err
 		}
@@ -383,12 +376,12 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 		// Create the remaining hard links.
 		for _, link := range links[1:] {
 			createOptions := &fsutil.CreateOptions{
-				Path: filepath.Join(opts.extractOptions.TargetDir, link.LinkPath),
+				Path: filepath.Join(opts.TargetDir, link.LinkPath),
 				Mode: tarHeader.FileInfo().Mode(),
 				// Link to the first file extracted for the hard links.
 				Link: extractPath,
 			}
-			err := opts.extractOptions.Create(link.ExtractInfos, createOptions)
+			err := opts.Create(link.ExtractInfos, createOptions)
 			if err != nil {
 				return err
 			}
@@ -406,10 +399,10 @@ func extractHardLinks(opts *extractHardLinkOptions) error {
 			}
 		}
 		if len(sLinks) == 1 {
-			return fmt.Errorf("hard link target missing: %s", sLinks[0])
+			return fmt.Errorf("internal error: hard link target missing: %s", sLinks[0])
 		}
 		sort.Strings(sLinks)
-		return fmt.Errorf("hard link targets missing:\n- %s", strings.Join(sLinks, "\n- "))
+		return fmt.Errorf("internal error: hard link targets missing:\n- %s", strings.Join(sLinks, "\n- "))
 	}
 
 	return nil
@@ -428,12 +421,11 @@ func parentDirs(path string) []string {
 	return parents
 }
 
-// sanitizeTarSourcePath removes the leading "./" from the source path in the tarball,
+// sanitizeTarPath removes the leading "./" from the source path in the tarball,
 // and verifies that the path is not empty.
-func sanitizeTarSourcePath(path string) string {
+func sanitizeTarPath(path string) string {
 	if len(path) < 3 || path[0] != '.' || path[1] != '/' {
 		return ""
 	}
-	path = path[1:]
-	return path
+	return path[1:]
 }

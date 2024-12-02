@@ -377,7 +377,7 @@ var extractTests = []extractTest{{
 	},
 	notCreated: []string{},
 }, {
-	summary: "Hard link is inflated with the target file",
+	summary: "Hard link entries can be extracted without extracting the regular file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
@@ -409,9 +409,9 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": hard link target missing: /hardlink -> /non-existing-target`,
+	error: `cannot extract from package "test-package": internal error: hard link target missing: /hardlink -> /non-existing-target`,
 }, {
-	summary: "Hard link to symlink does not follow symlink",
+	summary: "Hard link is linked to the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Lnk(0644, "./symlink", "./file"),
