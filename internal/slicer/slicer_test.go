@@ -1547,7 +1547,7 @@ var slicerTests = []slicerTest{{
 		"/hardlink2": "file 0644 28121945 <1> {test-package_myslice}",
 	},
 }, {
-	summary: "Hard link identifier distinguishes different hard links",
+	summary: "Hard link identifier for different groups",
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
