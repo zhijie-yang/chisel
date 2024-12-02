@@ -293,7 +293,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
@@ -301,7 +301,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 	},
 }, {
@@ -317,7 +317,7 @@ var reportTests = []struct {
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
 			Link:       "/base/example-file",
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/example-hard-link-sym": {
 			Path:       "/example-hard-link-sym",
@@ -326,7 +326,7 @@ var reportTests = []struct {
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
 			Link:       "/base/example-file",
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 	},
 }, {
@@ -361,7 +361,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
@@ -369,7 +369,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/another-file": {
 			Path:       "/another-file",
@@ -377,7 +377,7 @@ var reportTests = []struct {
 			SHA256:     "another-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
-			HardLinkId: 2,
+			HardLinkID: 2,
 		},
 		"/another-hard-link": {
 			Path:       "/another-hard-link",
@@ -385,7 +385,7 @@ var reportTests = []struct {
 			SHA256:     "another-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
-			HardLinkId: 2,
+			HardLinkID: 2,
 		},
 	},
 }, {
@@ -410,7 +410,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
@@ -418,7 +418,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 		"/another-hard-link": {
 			Path:       "/another-hard-link",
@@ -426,7 +426,7 @@ var reportTests = []struct {
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
-			HardLinkId: 1,
+			HardLinkID: 1,
 		},
 	},
 }}

@@ -39,7 +39,7 @@ type Path struct {
 	FinalSHA256 string   `json:"final_sha256,omitempty"`
 	Size        uint64   `json:"size,omitempty"`
 	Link        string   `json:"link,omitempty"`
-	HardLinkId  uint64   `json:"hard_link_id,omitempty"`
+	HardLinkID  uint64   `json:"hard_link_id,omitempty"`
 }
 
 type Content struct {
@@ -292,7 +292,7 @@ func manifestAddReport(dbw *jsonwall.DBWriter, report *Report) error {
 			FinalSHA256: entry.FinalSHA256,
 			Size:        uint64(entry.Size),
 			Link:        entry.Link,
-			HardLinkId:  entry.HardLinkId,
+			HardLinkID:  entry.HardLinkID,
 		})
 		if err != nil {
 			return err
@@ -345,9 +345,9 @@ func fastValidate(options *WriteOptions) (err error) {
 				return fmt.Errorf("path %q refers to missing slice %s", entry.Path, slice.String())
 			}
 		}
-		if entry.HardLinkId != 0 {
+		if entry.HardLinkID != 0 {
 			e := entry
-			hardLinkGroups[e.HardLinkId] = append(hardLinkGroups[e.HardLinkId], &e)
+			hardLinkGroups[e.HardLinkID] = append(hardLinkGroups[e.HardLinkID], &e)
 		}
 	}
 	// Entries within a hard link group must have same content.

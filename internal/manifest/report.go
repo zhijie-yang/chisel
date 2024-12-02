@@ -19,8 +19,8 @@ type ReportEntry struct {
 	Slices      map[*setup.Slice]bool
 	Link        string
 	FinalSHA256 string
-	// If HardLinkId is greater than 0, all entries with the same id represent hard links to the same inode.
-	HardLinkId uint64
+	// If HardLinkID is greater than 0, all entries with the same id represent hard links to the same inode.
+	HardLinkID uint64
 }
 
 // Report holds the information about files and directories created when slicing
@@ -30,9 +30,9 @@ type Report struct {
 	Root string
 	// Entries holds all reported content, indexed by their path.
 	Entries map[string]ReportEntry
-	// lastHardLinkId is used internally to allocate unique HardLinkId for hard
+	// lastHardLinkID is used internally to allocate unique HardLinkID for hard
 	// links.
-	lastHardLinkId atomic.Uint64
+	lastHardLinkID atomic.Uint64
 }
 
 // NewReport returns an empty report for content that will be based at the
@@ -58,7 +58,7 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		return fmt.Errorf("cannot add path to report: %s", err)
 	}
 
-	var hardLinkId uint64
+	var hardLinkID uint64
 	sha256 := fsEntry.SHA256
 	size := fsEntry.Size
 	link := fsEntry.Link
@@ -68,12 +68,12 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		if !ok {
 			return fmt.Errorf("cannot add hard link %s to report: target %s not previously added", relPath, relLinkPath)
 		}
-		if entry.HardLinkId == 0 {
-			entry.HardLinkId = r.lastHardLinkId.Add(1)
-			r.lastHardLinkId.Store(entry.HardLinkId)
+		if entry.HardLinkID == 0 {
+			entry.HardLinkID = r.lastHardLinkID.Add(1)
+			r.lastHardLinkID.Store(entry.HardLinkID)
 			r.Entries[relLinkPath] = entry
 		}
-		hardLinkId = entry.HardLinkId
+		hardLinkID = entry.HardLinkID
 		sha256 = entry.SHA256
 		size = entry.Size
 		link = entry.Link
@@ -99,7 +99,7 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 			Size:       size,
 			Slices:     map[*setup.Slice]bool{slice: true},
 			Link:       link,
-			HardLinkId: hardLinkId,
+			HardLinkID: hardLinkID,
 		}
 	}
 	return nil

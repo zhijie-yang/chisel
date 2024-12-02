@@ -1956,9 +1956,9 @@ func treeDumpManifestPaths(mfest *manifest.Manifest) (map[string]string, error) 
 			}
 		}
 
-		if path.HardLinkId != 0 {
-			// Append <hardLinkId> to the end of the path dump
-			fsDump = fmt.Sprintf("%s <%d>", fsDump, path.HardLinkId)
+		if path.HardLinkID != 0 {
+			// Append <hardLinkID> to the end of the path dump
+			fsDump = fmt.Sprintf("%s <%d>", fsDump, path.HardLinkID)
 		}
 
 		// append {slice1, ..., sliceN} to the end of the path dump.

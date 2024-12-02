@@ -52,9 +52,9 @@ var readManifestTests = []struct {
 	`,
 	mfest: &manifestContents{
 		Paths: []*manifest.Path{
-			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkId: 1},
+			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkID: 1},
 			{Kind: "path", Path: "/dir/foo/bar/", Mode: "01777", Slices: []string{"pkg2_myotherslice", "pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
-			{Kind: "path", Path: "/dir/hardlink/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkId: 1},
+			{Kind: "path", Path: "/dir/hardlink/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: "", HardLinkID: 1},
 			{Kind: "path", Path: "/dir/link/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: "/dir/file"},
 			{Kind: "path", Path: "/manifest/manifest.wall", Mode: "0644", Slices: []string{"pkg1_manifest"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
 		},
@@ -299,7 +299,7 @@ var generateManifestTests = []struct {
 				Size:        1234,
 				Slices:      map[*setup.Slice]bool{slice1: true},
 				FinalSHA256: "final-hash",
-				HardLinkId:  1,
+				HardLinkID:  1,
 			},
 			"/hardlink": {
 				Path:        "/hardlink",
@@ -308,7 +308,7 @@ var generateManifestTests = []struct {
 				Size:        1234,
 				Slices:      map[*setup.Slice]bool{slice1: true},
 				FinalSHA256: "final-hash",
-				HardLinkId:  1,
+				HardLinkID:  1,
 			},
 			"/link": {
 				Path:   "/link",
@@ -338,7 +338,7 @@ var generateManifestTests = []struct {
 			Size:        1234,
 			SHA256:      "hash",
 			FinalSHA256: "final-hash",
-			HardLinkId:  1,
+			HardLinkID:  1,
 		}, {
 			Kind:        "path",
 			Path:        "/hardlink",
@@ -347,7 +347,7 @@ var generateManifestTests = []struct {
 			Size:        1234,
 			SHA256:      "hash",
 			FinalSHA256: "final-hash",
-			HardLinkId:  1,
+			HardLinkID:  1,
 		}, {
 			Kind:   "path",
 			Path:   "/link",
@@ -575,7 +575,7 @@ var generateManifestTests = []struct {
 			"/file": {
 				Path:       "/file",
 				Slices:     map[*setup.Slice]bool{slice1: true},
-				HardLinkId: 2,
+				HardLinkID: 2,
 			},
 		},
 	},
@@ -588,7 +588,7 @@ var generateManifestTests = []struct {
 			"/file": {
 				Path:       "/file",
 				Slices:     map[*setup.Slice]bool{slice1: true},
-				HardLinkId: 1,
+				HardLinkID: 1,
 			},
 		},
 	},
@@ -604,7 +604,7 @@ var generateManifestTests = []struct {
 				SHA256:     "hash",
 				Size:       1234,
 				Slices:     map[*setup.Slice]bool{slice1: true},
-				HardLinkId: 1,
+				HardLinkID: 1,
 			},
 			"/hardlink": {
 				Path:       "/hardlink",
@@ -612,7 +612,7 @@ var generateManifestTests = []struct {
 				SHA256:     "different-hash",
 				Size:       1234,
 				Slices:     map[*setup.Slice]bool{slice1: true},
-				HardLinkId: 1,
+				HardLinkID: 1,
 			},
 		},
 	},
