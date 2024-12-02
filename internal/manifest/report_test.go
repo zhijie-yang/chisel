@@ -297,7 +297,7 @@ var reportTests = []struct {
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
-			Mode:       sampleFile.Mode,
+			Mode:       0777,
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
@@ -330,7 +330,7 @@ var reportTests = []struct {
 		},
 	},
 }, {
-	summary: "Multiple hard links",
+	summary: "Multiple hard links groups",
 	add: []sliceAndEntry{{
 		entry: sampleFile,
 		slice: oneSlice,
@@ -348,7 +348,7 @@ var reportTests = []struct {
 	}, {
 		entry: fsutil.Entry{
 			Path:     "/base/another-hard-link",
-			Mode:     sampleFile.Mode,
+			Mode:     0777,
 			Link:     "/base/another-file",
 			HardLink: true,
 		},
@@ -365,7 +365,7 @@ var reportTests = []struct {
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
-			Mode:       sampleFile.Mode,
+			Mode:       0777,
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
@@ -381,7 +381,7 @@ var reportTests = []struct {
 		},
 		"/another-hard-link": {
 			Path:       "/another-hard-link",
-			Mode:       sampleFile.Mode,
+			Mode:       0777,
 			SHA256:     "another-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
@@ -397,7 +397,7 @@ var reportTests = []struct {
 	}, {
 		entry: fsutil.Entry{
 			Path:     "/base/another-hard-link",
-			Mode:     sampleFile.Mode,
+			Mode:     0777,
 			Link:     "/base/example-file",
 			HardLink: true,
 		},
@@ -414,7 +414,7 @@ var reportTests = []struct {
 		},
 		"/example-hard-link": {
 			Path:       "/example-hard-link",
-			Mode:       sampleFile.Mode,
+			Mode:       0777,
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{oneSlice: true},
@@ -422,7 +422,7 @@ var reportTests = []struct {
 		},
 		"/another-hard-link": {
 			Path:       "/another-hard-link",
-			Mode:       sampleFile.Mode,
+			Mode:       0777,
 			SHA256:     "example-file_hash",
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
