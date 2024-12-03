@@ -155,6 +155,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	// not for all tarballs.
 	tarDirMode := make(map[string]fs.FileMode)
 	tarReader := tar.NewReader(dataReader)
+	defer dataReader.Close()
 	for {
 		tarHeader, err := tarReader.Next()
 		if err == io.EOF {
@@ -274,8 +275,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 				// to extract later.
 				basePath := sanitizeTarPath(tarHeader.Linkname)
 				info := pendingHardLink{
-					LinkPath:     targetPath,
-					ExtractInfos: extractInfos,
+					link:         targetPath,
+					extractInfos: extractInfos,
 				}
 				pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
 			} else if err != nil {
@@ -283,8 +284,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 		}
 	}
-
-	dataReader.Close()
 
 	// Go over the tarball again to textract the pending hard links.
 	if len(pendingHardLinks) > 0 {
@@ -295,12 +294,12 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		if offset != 0 {
 			return fmt.Errorf("internal error: cannot seek to the beginning of the package")
 		}
-		dataReader, err = getDataReader(pkgReader)
+		dataReader2, err := getDataReader(pkgReader)
 		if err != nil {
 			return err
 		}
-		defer dataReader.Close()
-		tarReader := tar.NewReader(dataReader)
+		defer dataReader2.Close()
+		tarReader := tar.NewReader(dataReader2)
 		extractHardLinkOptions := &extractHardLinkOptions{
 			ExtractOptions: options,
 			pendingLinks:   pendingHardLinks,
@@ -328,8 +327,8 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 }
 
 type pendingHardLink struct {
-	LinkPath     string
-	ExtractInfos []ExtractInfo
+	link         string
+	extractInfos []ExtractInfo
 }
 
 type extractHardLinkOptions struct {
@@ -362,15 +361,15 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 			continue
 		}
 
-		targetPath := links[0].LinkPath
-		extractPath := filepath.Join(opts.TargetDir, targetPath)
+		relLink := links[0].link
+		absLink := filepath.Join(opts.TargetDir, relLink)
 		// Write the content for the first file in the hard link group
 		createOptions := &fsutil.CreateOptions{
-			Path: extractPath,
+			Path: absLink,
 			Mode: tarHeader.FileInfo().Mode(),
 			Data: tarReader,
 		}
-		err = opts.Create(links[0].ExtractInfos, createOptions)
+		err = opts.Create(links[0].extractInfos, createOptions)
 		if err != nil {
 			return err
 		}
@@ -378,12 +377,12 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 		// Create the remaining hard links.
 		for _, link := range links[1:] {
 			createOptions := &fsutil.CreateOptions{
-				Path: filepath.Join(opts.TargetDir, link.LinkPath),
+				Path: filepath.Join(opts.TargetDir, link.link),
 				Mode: tarHeader.FileInfo().Mode(),
 				// Link to the first file extracted for the hard links.
-				Link: extractPath,
+				Link: absLink,
 			}
-			err := opts.Create(link.ExtractInfos, createOptions)
+			err := opts.Create(link.extractInfos, createOptions)
 			if err != nil {
 				return err
 			}
@@ -397,14 +396,14 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 		var sLinks []string
 		for target, links := range opts.pendingLinks {
 			for _, link := range links {
-				sLinks = append(sLinks, link.LinkPath+" -> "+target)
+				sLinks = append(sLinks, link.link+": no content at "+target)
 			}
 		}
 		if len(sLinks) == 1 {
-			return fmt.Errorf("internal error: hard link target missing: %s", sLinks[0])
+			return fmt.Errorf("cannot create hard link: %s", sLinks[0])
 		}
 		sort.Strings(sLinks)
-		return fmt.Errorf("internal error: hard link targets missing:\n- %s", strings.Join(sLinks, "\n- "))
+		return fmt.Errorf("cannot create hard links:\n- %s", strings.Join(sLinks, "\n- "))
 	}
 
 	return nil

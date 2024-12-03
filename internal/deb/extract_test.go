@@ -363,11 +363,8 @@ var extractTests = []extractTest{{
 	}),
 	options: deb.ExtractOptions{
 		Extract: map[string][]deb.ExtractInfo{
-			"/file": []deb.ExtractInfo{{
-				Path: "/file",
-			}},
-			"/hardlink": []deb.ExtractInfo{{
-				Path: "/hardlink",
+			"/**": []deb.ExtractInfo{{
+				Path: "/**",
 			}},
 		},
 	},
@@ -395,26 +392,6 @@ var extractTests = []extractTest{{
 	},
 	notCreated: []string{},
 }, {
-	summary: "Multiple hard link entries can be extracted without the target file",
-	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
-		testutil.Dir(0755, "./"),
-		testutil.Reg(0644, "./file", "text for file"),
-		testutil.Hlk(0644, "./hardlink1", "./file"),
-		testutil.Hlk(0644, "./hardlink2", "./file"),
-	}),
-	options: deb.ExtractOptions{
-		Extract: map[string][]deb.ExtractInfo{
-			"/hardlink*": []deb.ExtractInfo{{
-				Path: "/hardlink*",
-			}},
-		},
-	},
-	result: map[string]string{
-		"/hardlink1": "file 0644 28121945",
-		"/hardlink2": "file 0644 28121945",
-	},
-	notCreated: []string{},
-}, {
 	summary: "Dangling hard link",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
@@ -427,7 +404,7 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": internal error: hard link target missing: /hardlink -> /non-existing-target`,
+	error: `cannot extract from package "test-package": cannot create hard link: /hardlink: no content at /non-existing-target`,
 }, {
 	summary: "Multiple dangling hard links",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
@@ -442,9 +419,9 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": internal error: hard link targets missing:` +
-		`\n- /hardlink1 -> /non-existing-target` +
-		`\n- /hardlink2 -> /non-existing-target`,
+	error: `cannot extract from package "test-package": cannot create hard links:` +
+		`\n- /hardlink1: no content at /non-existing-target` +
+		`\n- /hardlink2: no content at /non-existing-target`,
 }, {
 	summary: "Hard link follows the symlink",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
