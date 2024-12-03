@@ -346,23 +346,17 @@ func fastValidate(options *WriteOptions) (err error) {
 			}
 		}
 		if entry.HardLinkID != 0 {
+			// TODO remove the following line after upgrading to Go 1.22 or higher.
 			e := entry
 			hardLinkGroups[e.HardLinkID] = append(hardLinkGroups[e.HardLinkID], &e)
 		}
 	}
 	// Entries within a hard link group must have same content.
-	var linkIDs []uint64
-	for id := range hardLinkGroups {
-		linkIDs = append(linkIDs, id)
-	}
-	sort.Slice(linkIDs, func(i, j int) bool {
-		return linkIDs[i] < linkIDs[j]
-	})
-	for i, id := range linkIDs {
-		if uint64(i+1) != id {
-			return fmt.Errorf("skipped hard link ID %d, but %d exists", i+1, id)
+	for id := 1; id <= len(hardLinkGroups); id++ {
+		entries, ok := hardLinkGroups[uint64(id)]
+		if !ok {
+			return fmt.Errorf("cannot find hard link id %d", id)
 		}
-		entries := hardLinkGroups[id]
 		if len(entries) == 1 {
 			return fmt.Errorf("hard link group %d has only one path: %s", id, entries[0].Path)
 		}
