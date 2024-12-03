@@ -303,16 +303,6 @@ var generateManifestTests = []struct {
 				Size:        1234,
 				Slices:      map[*setup.Slice]bool{slice1: true},
 				FinalSHA256: "final-hash",
-				HardLinkID:  1,
-			},
-			"/hardlink": {
-				Path:        "/hardlink",
-				Mode:        0456,
-				SHA256:      "hash",
-				Size:        1234,
-				Slices:      map[*setup.Slice]bool{slice1: true},
-				FinalSHA256: "final-hash",
-				HardLinkID:  1,
 			},
 			"/link": {
 				Path:   "/link",
@@ -342,16 +332,6 @@ var generateManifestTests = []struct {
 			Size:        1234,
 			SHA256:      "hash",
 			FinalSHA256: "final-hash",
-			HardLinkID:  1,
-		}, {
-			Kind:        "path",
-			Path:        "/hardlink",
-			Mode:        "0456",
-			Slices:      []string{"package1_slice1"},
-			Size:        1234,
-			SHA256:      "hash",
-			FinalSHA256: "final-hash",
-			HardLinkID:  1,
 		}, {
 			Kind:   "path",
 			Path:   "/link",
@@ -383,10 +363,6 @@ var generateManifestTests = []struct {
 			Kind:  "content",
 			Slice: "package1_slice1",
 			Path:  "/file",
-		}, {
-			Kind:  "content",
-			Slice: "package1_slice1",
-			Path:  "/hardlink",
 		}, {
 			Kind:  "content",
 			Slice: "package1_slice1",
@@ -571,6 +547,79 @@ var generateManifestTests = []struct {
 		},
 	},
 	error: `internal error: invalid manifest: path "/dir" has invalid options: size set for directory`,
+}, {
+	summary:   "Basic hard link",
+	selection: []*setup.Slice{slice1},
+	report: &manifest.Report{
+		Root: "/",
+		Entries: map[string]manifest.ReportEntry{
+			"/file": {
+				Path:        "/file",
+				Mode:        0456,
+				SHA256:      "hash",
+				Size:        1234,
+				Slices:      map[*setup.Slice]bool{slice1: true},
+				FinalSHA256: "final-hash",
+				HardLinkID:  1,
+			},
+			"/hardlink": {
+				Path:        "/hardlink",
+				Mode:        0456,
+				SHA256:      "hash",
+				Size:        1234,
+				Slices:      map[*setup.Slice]bool{slice1: true},
+				FinalSHA256: "final-hash",
+				HardLinkID:  1,
+			},
+		},
+	},
+	packageInfo: []*archive.PackageInfo{{
+		Name:    "package1",
+		Version: "v1",
+		Arch:    "a1",
+		SHA256:  "s1",
+	}},
+	expected: &manifestContents{
+		Paths: []*manifest.Path{{
+			Kind:        "path",
+			Path:        "/file",
+			Mode:        "0456",
+			Slices:      []string{"package1_slice1"},
+			Size:        1234,
+			SHA256:      "hash",
+			FinalSHA256: "final-hash",
+			HardLinkID:  1,
+		}, {
+			Kind:        "path",
+			Path:        "/hardlink",
+			Mode:        "0456",
+			Slices:      []string{"package1_slice1"},
+			Size:        1234,
+			SHA256:      "hash",
+			FinalSHA256: "final-hash",
+			HardLinkID:  1,
+		}},
+		Packages: []*manifest.Package{{
+			Kind:    "package",
+			Name:    "package1",
+			Version: "v1",
+			Digest:  "s1",
+			Arch:    "a1",
+		}},
+		Slices: []*manifest.Slice{{
+			Kind: "slice",
+			Name: "package1_slice1",
+		}},
+		Contents: []*manifest.Content{{
+			Kind:  "content",
+			Slice: "package1_slice1",
+			Path:  "/file",
+		}, {
+			Kind:  "content",
+			Slice: "package1_slice1",
+			Path:  "/hardlink",
+		}},
+	},
 }, {
 	summary: "Skipped hard link id",
 	report: &manifest.Report{
