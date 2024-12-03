@@ -411,6 +411,23 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": internal error: hard link target missing: /hardlink -> /non-existing-target`,
 }, {
+	summary: "Multiple dangling hard links",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		testutil.Hlk(0644, "./hardlink1", "./non-existing-target"),
+		testutil.Hlk(0644, "./hardlink2", "./non-existing-target"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/**": []deb.ExtractInfo{{
+				Path: "/**",
+			}},
+		},
+	},
+	error: `cannot extract from package "test-package": internal error: hard link targets missing:` +
+		`\n- /hardlink1 -> /non-existing-target` +
+		`\n- /hardlink2 -> /non-existing-target`,
+}, {
 	summary: "Hard link is linked to the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
