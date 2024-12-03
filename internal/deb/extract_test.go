@@ -355,7 +355,7 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Hard link is linked to the target file",
+	summary: "Single hard link entry can be extracted with the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
@@ -377,7 +377,25 @@ var extractTests = []extractTest{{
 	},
 	notCreated: []string{},
 }, {
-	summary: "Hard link entries can be extracted without extracting the regular file",
+	summary: "Single hard link entry can be extracted without the target file",
+	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
+		testutil.Dir(0755, "./"),
+		testutil.Reg(0644, "./file", "text for file"),
+		testutil.Hlk(0644, "./hardlink", "./file"),
+	}),
+	options: deb.ExtractOptions{
+		Extract: map[string][]deb.ExtractInfo{
+			"/hardlink": []deb.ExtractInfo{{
+				Path: "/hardlink",
+			}},
+		},
+	},
+	result: map[string]string{
+		"/hardlink": "file 0644 28121945",
+	},
+	notCreated: []string{},
+}, {
+	summary: "Multiple hard link entries can be extracted without the target file",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
@@ -428,7 +446,7 @@ var extractTests = []extractTest{{
 		`\n- /hardlink1 -> /non-existing-target` +
 		`\n- /hardlink2 -> /non-existing-target`,
 }, {
-	summary: "Hard link is linked to the target file",
+	summary: "Hard link follows the symlink",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Lnk(0644, "./symlink", "./file"),

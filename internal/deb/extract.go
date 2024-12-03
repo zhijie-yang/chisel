@@ -337,7 +337,7 @@ type extractHardLinkOptions struct {
 	pendingLinks map[string][]pendingHardLink
 }
 
-// extractHardLinks iterate through the tarball the second time to extract the
+// extractHardLinks iterates through the tarball a second time to extract the
 // hard links that were not extracted in the first pass.
 // The first hard link for each link target is extracted as a file with identical
 // content to the link target, and the rest of the hard links are created as hard

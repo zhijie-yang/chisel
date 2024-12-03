@@ -206,16 +206,16 @@ var reportTests = []struct {
 }, {
 	summary: "Error for same path distinct link",
 	add: []sliceAndEntry{
-		{entry: sampleSymLink, slice: oneSlice},
+		{entry: sampleFile, slice: oneSlice},
 		{entry: fsutil.Entry{
-			Path:   sampleSymLink.Path,
-			Mode:   sampleSymLink.Mode,
-			SHA256: sampleSymLink.SHA256,
-			Size:   sampleSymLink.Size,
+			Path:   sampleFile.Path,
+			Mode:   sampleFile.Mode,
+			SHA256: sampleFile.SHA256,
+			Size:   sampleFile.Size,
 			Link:   "distinct link",
 		}, slice: oneSlice},
 	},
-	err: `path /example-link reported twice with diverging link: "distinct link" != "/base/example-file"`,
+	err: `path /example-file reported twice with diverging link: "distinct link" != ""`,
 }, {
 	summary: "Error for path outside root",
 	add: []sliceAndEntry{
