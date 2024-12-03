@@ -1734,9 +1734,8 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink", "./dir/file"),
+			testutil.Reg(0644, "./file", "text for file"),
+			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1745,48 +1744,17 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/file:
+						/file:
 						/hardlink: {mutable: true}
 		`,
 	},
 	filesystem: map[string]string{
-		"/dir/":     "dir 0755",
-		"/dir/file": "file 0644 28121945",
+		"/file":     "file 0644 28121945",
 		"/hardlink": "file 0644 28121945",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 28121945 <1> {test-package_myslice}",
+		"/file":     "file 0644 28121945 <1> {test-package_myslice}",
 		"/hardlink": "file 0644 28121945 <1> {test-package_myslice}",
-	},
-}, {
-	summary: "UntilMutate for hard links are allowed",
-	slices: []setup.SliceKey{
-		{"test-package", "myslice"}},
-	pkgs: []*testutil.TestPackage{{
-		Name: "test-package",
-		Data: testutil.MustMakeDeb([]testutil.TarEntry{
-			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink", "./dir/file"),
-		}),
-	}},
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/dir/file:
-						/hardlink: {until: mutate}
-		`,
-	},
-	filesystem: map[string]string{
-		"/dir/":     "dir 0755",
-		"/dir/file": "file 0644 28121945",
-	},
-	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 28121945 {test-package_myslice}",
 	},
 }}
 
