@@ -131,7 +131,7 @@ var createTests = []createTest{{
 	},
 	error: `link /[^ ]*/missing-file /[^ ]*/hardlink: no such file or directory`,
 }, {
-	summary: "Hard link is not created if it already exists",
+	summary: "No error if hard link already exists",
 	options: fsutil.CreateOptions{
 		Path:        "hardlink",
 		Link:        "file",
@@ -148,7 +148,7 @@ var createTests = []createTest{{
 		"/hardlink": "file 0644 3a6eb079",
 	},
 }, {
-	summary: "Cannot create a hard link if it exists and is not a hard link to target",
+	summary: "Cannot create a hard link if file exists but differs",
 	options: fsutil.CreateOptions{
 		Path:        "hardlink",
 		Link:        "file",
@@ -206,7 +206,7 @@ var createTests = []createTest{{
 		"/foo": "symlink ./bar",
 	},
 }, {
-	summary: "The mode of a symlink target is not overridden by the symlink",
+	summary: "OverrideMode does not follow symlink",
 	options: fsutil.CreateOptions{
 		Path:         "foo",
 		Link:         "./bar",
@@ -240,7 +240,7 @@ var createTests = []createTest{{
 		"/bar": "symlink other",
 	},
 }, {
-	summary: "Same symlink can be overwritten",
+	summary: "No error if symlink already exists",
 	options: fsutil.CreateOptions{
 		Path: "bar",
 		// Existing link with same target.
