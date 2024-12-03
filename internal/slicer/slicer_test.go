@@ -1487,9 +1487,9 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink", "./dir/file"),
+			testutil.Dir(0755, "./"),
+			testutil.Reg(0644, "./file", "foo"),
+			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1498,21 +1498,19 @@ var slicerTests = []slicerTest{{
 		slices:
 			slice1:
 				contents:
-					/dir/file:
-					/hardlink:
+					/**:
 			slice2:
 				contents:
 					/hardlink:
 	`,
 	},
 	filesystem: map[string]string{
-		"/dir/":     "dir 0755",
-		"/dir/file": "file 0644 28121945",
-		"/hardlink": "file 0644 28121945",
+		"/file":     "file 0644 2c26b46b",
+		"/hardlink": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file": "file 0644 28121945 <1> {test-package_slice1}",
-		"/hardlink": "file 0644 28121945 <1> {test-package_slice1,test-package_slice2}",
+		"/file":     "file 0644 2c26b46b <1> {test-package_slice1}",
+		"/hardlink": "file 0644 2c26b46b <1> {test-package_slice1,test-package_slice2}",
 	},
 }, {
 	summary: "Hard link entries can be extracted without extracting the regular file",
@@ -1522,10 +1520,9 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink1", "./dir/file"),
-			testutil.Hlk(0644, "./hardlink2", "./dir/file"),
+			testutil.Reg(0644, "./file", "foo"),
+			testutil.Hlk(0644, "./hardlink1", "./file"),
+			testutil.Hlk(0644, "./hardlink2", "./file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1534,17 +1531,16 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/hardlink1:
-						/hardlink2:
+						/hardlink*:
 		`,
 	},
 	filesystem: map[string]string{
-		"/hardlink1": "file 0644 28121945",
-		"/hardlink2": "file 0644 28121945",
+		"/hardlink1": "file 0644 2c26b46b",
+		"/hardlink2": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
-		"/hardlink1": "file 0644 28121945 <1> {test-package_myslice}",
-		"/hardlink2": "file 0644 28121945 <1> {test-package_myslice}",
+		"/hardlink1": "file 0644 2c26b46b <1> {test-package_myslice}",
+		"/hardlink2": "file 0644 2c26b46b <1> {test-package_myslice}",
 	},
 }, {
 	summary: "Hard link identifier for different groups",
@@ -1554,11 +1550,10 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file1", "text for file1"),
-			testutil.Reg(0644, "./dir/file2", "text for file2"),
-			testutil.Hlk(0644, "./hardlink1", "./dir/file1"),
-			testutil.Hlk(0644, "./hardlink2", "./dir/file2"),
+			testutil.Reg(0644, "./file1", "text for file1"),
+			testutil.Reg(0644, "./file2", "text for file2"),
+			testutil.Hlk(0644, "./hardlink1", "./file1"),
+			testutil.Hlk(0644, "./hardlink2", "./file2"),
 		}),
 	}},
 	release: map[string]string{
@@ -1567,22 +1562,18 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/file1:
-						/dir/file2:
-						/hardlink1:
-						/hardlink2:
+						/**:
 		`,
 	},
 	filesystem: map[string]string{
-		"/dir/":      "dir 0755",
-		"/dir/file1": "file 0644 df82bbbd",
-		"/dir/file2": "file 0644 dcddda2e",
+		"/file1":     "file 0644 df82bbbd",
+		"/file2":     "file 0644 dcddda2e",
 		"/hardlink1": "file 0644 df82bbbd",
 		"/hardlink2": "file 0644 dcddda2e",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file1": "file 0644 df82bbbd <1> {test-package_myslice}",
-		"/dir/file2": "file 0644 dcddda2e <2> {test-package_myslice}",
+		"/file1":     "file 0644 df82bbbd <1> {test-package_myslice}",
+		"/file2":     "file 0644 dcddda2e <2> {test-package_myslice}",
 		"/hardlink1": "file 0644 df82bbbd <1> {test-package_myslice}",
 		"/hardlink2": "file 0644 dcddda2e <2> {test-package_myslice}",
 	},
@@ -1594,9 +1585,8 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink", "./dir/file"),
+			testutil.Reg(0644, "./file", "foo"),
+			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1609,10 +1599,10 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/hardlink": "file 0644 28121945",
+		"/hardlink": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
-		"/hardlink": "file 0644 28121945 {test-package_myslice}",
+		"/hardlink": "file 0644 2c26b46b {test-package_myslice}",
 	},
 }, {
 	summary: "Hard link to symlink does not follow symlink",
@@ -1622,9 +1612,9 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Lnk(0644, "./symlink", "./dir/file"),
+			testutil.Dir(0755, "./"),
+			testutil.Reg(0644, "./file", "foo"),
+			testutil.Lnk(0644, "./symlink", "./file"),
 			testutil.Hlk(0644, "./hardlink", "./symlink"),
 		}),
 	}},
@@ -1639,12 +1629,12 @@ var slicerTests = []slicerTest{{
 				`,
 	},
 	filesystem: map[string]string{
-		"/hardlink": "symlink ./dir/file",
-		"/symlink":  "symlink ./dir/file",
+		"/hardlink": "symlink ./file",
+		"/symlink":  "symlink ./file",
 	},
 	manifestPaths: map[string]string{
-		"/symlink":  "symlink ./dir/file <1> {test-package_myslice}",
-		"/hardlink": "symlink ./dir/file <1> {test-package_myslice}",
+		"/symlink":  "symlink ./file <1> {test-package_myslice}",
+		"/hardlink": "symlink ./file <1> {test-package_myslice}",
 	},
 }, {
 	summary: "Hard link identifiers are unique across packages",
@@ -1656,17 +1646,15 @@ var slicerTests = []slicerTest{{
 		Name: "test-package1",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file1", "text for file"),
-			testutil.Hlk(0644, "./hardlink1", "./dir/file1"),
+			testutil.Reg(0644, "./file1", "foo"),
+			testutil.Hlk(0644, "./hardlink1", "./file1"),
 		}),
 	}, {
 		Name: "test-package2",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file2", "text for file"),
-			testutil.Hlk(0644, "./hardlink2", "./dir/file2"),
+			testutil.Reg(0644, "./file2", "foo"),
+			testutil.Hlk(0644, "./hardlink2", "./file2"),
 		}),
 	}},
 	release: map[string]string{
@@ -1675,7 +1663,7 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/file1:
+						/file1:
 						/hardlink1:
 		`,
 		"slices/mydir/test-package2.yaml": `
@@ -1683,22 +1671,21 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/file2:
+						/file2:
 						/hardlink2:
 		`,
 	},
 	filesystem: map[string]string{
-		"/dir/":      "dir 0755",
-		"/dir/file1": "file 0644 28121945",
-		"/hardlink1": "file 0644 28121945",
-		"/dir/file2": "file 0644 28121945",
-		"/hardlink2": "file 0644 28121945",
+		"/file1":     "file 0644 2c26b46b",
+		"/hardlink1": "file 0644 2c26b46b",
+		"/file2":     "file 0644 2c26b46b",
+		"/hardlink2": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
-		"/dir/file1": "file 0644 28121945 <1> {test-package1_myslice}",
-		"/hardlink1": "file 0644 28121945 <1> {test-package1_myslice}",
-		"/dir/file2": "file 0644 28121945 <2> {test-package2_myslice}",
-		"/hardlink2": "file 0644 28121945 <2> {test-package2_myslice}",
+		"/file1":     "file 0644 2c26b46b <1> {test-package1_myslice}",
+		"/hardlink1": "file 0644 2c26b46b <1> {test-package1_myslice}",
+		"/file2":     "file 0644 2c26b46b <2> {test-package2_myslice}",
+		"/hardlink2": "file 0644 2c26b46b <2> {test-package2_myslice}",
 	},
 }, {
 	summary: "Mutations for hard links are forbidden",
@@ -1708,9 +1695,8 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./dir/"),
-			testutil.Reg(0644, "./dir/file", "text for file"),
-			testutil.Hlk(0644, "./hardlink", "./dir/file"),
+			testutil.Reg(0644, "./file", "foo"),
+			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
 	}},
 	release: map[string]string{
@@ -1719,7 +1705,7 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/file:
+						/file:
 						/hardlink: {mutable: true}
 					mutate: |
 						content.write("/hardlink", "new content")
@@ -1734,7 +1720,7 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Reg(0644, "./file", "text for file"),
+			testutil.Reg(0644, "./file", "foo"),
 			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
 	}},
@@ -1749,12 +1735,12 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/file":     "file 0644 28121945",
-		"/hardlink": "file 0644 28121945",
+		"/file":     "file 0644 2c26b46b",
+		"/hardlink": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
-		"/file":     "file 0644 28121945 <1> {test-package_myslice}",
-		"/hardlink": "file 0644 28121945 <1> {test-package_myslice}",
+		"/file":     "file 0644 2c26b46b <1> {test-package_myslice}",
+		"/hardlink": "file 0644 2c26b46b <1> {test-package_myslice}",
 	},
 }}
 
