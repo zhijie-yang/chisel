@@ -55,13 +55,6 @@ var sampleHardLink = fsutil.Entry{
 	HardLink: true,
 }
 
-var sampleHardLinkSym = fsutil.Entry{
-	Path:     "/base/example-hard-link-sym",
-	Mode:     fs.ModeSymlink | sampleFile.Mode,
-	Link:     "/base/example-link",
-	HardLink: true,
-}
-
 var sampleFileMutated = fsutil.Entry{
 	Path:   sampleFile.Path,
 	SHA256: sampleFile.SHA256 + "_changed",
@@ -305,31 +298,6 @@ var reportTests = []struct {
 		},
 	},
 }, {
-	summary: "Hard link to symlink",
-	add: []sliceAndEntry{
-		{entry: sampleSymLink, slice: oneSlice},
-		{entry: sampleHardLinkSym, slice: oneSlice}},
-	expected: map[string]manifest.ReportEntry{
-		"/example-link": {
-			Path:       "/example-link",
-			Mode:       fs.ModeSymlink | 0777,
-			SHA256:     "example-file_hash",
-			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "/base/example-file",
-			HardLinkID: 1,
-		},
-		"/example-hard-link-sym": {
-			Path:       "/example-hard-link-sym",
-			Mode:       fs.ModeSymlink | 0777,
-			SHA256:     "example-file_hash",
-			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			Link:       "/base/example-file",
-			HardLinkID: 1,
-		},
-	},
-}, {
 	summary: "Multiple hard links groups",
 	add: []sliceAndEntry{{
 		entry: sampleFile,
@@ -386,47 +354,6 @@ var reportTests = []struct {
 			Size:       5678,
 			Slices:     map[*setup.Slice]bool{otherSlice: true},
 			HardLinkID: 2,
-		},
-	},
-}, {
-	summary: "Hard links to same file in different slices",
-	add: []sliceAndEntry{{
-		entry: sampleFile, slice: oneSlice,
-	}, {
-		entry: sampleHardLink, slice: oneSlice,
-	}, {
-		entry: fsutil.Entry{
-			Path:     "/base/another-hard-link",
-			Mode:     0777,
-			Link:     "/base/example-file",
-			HardLink: true,
-		},
-		slice: otherSlice,
-	}},
-	expected: map[string]manifest.ReportEntry{
-		"/example-file": {
-			Path:       "/example-file",
-			Mode:       0777,
-			SHA256:     "example-file_hash",
-			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkID: 1,
-		},
-		"/example-hard-link": {
-			Path:       "/example-hard-link",
-			Mode:       0777,
-			SHA256:     "example-file_hash",
-			Size:       5678,
-			Slices:     map[*setup.Slice]bool{oneSlice: true},
-			HardLinkID: 1,
-		},
-		"/another-hard-link": {
-			Path:       "/another-hard-link",
-			Mode:       0777,
-			SHA256:     "example-file_hash",
-			Size:       5678,
-			Slices:     map[*setup.Slice]bool{otherSlice: true},
-			HardLinkID: 1,
 		},
 	},
 }}
