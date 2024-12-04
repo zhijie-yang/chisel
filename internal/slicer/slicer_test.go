@@ -1487,7 +1487,6 @@ var slicerTests = []slicerTest{{
 		Name: "test-package",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Dir(0755, "./"),
-			testutil.Dir(0755, "./"),
 			testutil.Reg(0644, "./file", "foo"),
 			testutil.Hlk(0644, "./hardlink", "./file"),
 		}),
@@ -1498,7 +1497,8 @@ var slicerTests = []slicerTest{{
 		slices:
 			slice1:
 				contents:
-					/**:
+					/file:
+					/hardlink:
 			slice2:
 				contents:
 					/hardlink:
@@ -1911,7 +1911,7 @@ func treeDumpManifestPaths(mfest *manifest.Manifest) (map[string]string, error) 
 		}
 
 		if path.HardLinkID != 0 {
-			// Append <hardLinkID> to the end of the path dump
+			// Append <hardLinkID> to the end of the path dump.
 			fsDump = fmt.Sprintf("%s <%d>", fsDump, path.HardLinkID)
 		}
 
