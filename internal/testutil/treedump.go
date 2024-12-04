@@ -6,15 +6,15 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"syscall"
 
 	"github.com/canonical/chisel/internal/fsutil"
 )
 
 func TreeDump(dir string) map[string]string {
-	result := make(map[string]string)
+	var inodes []uint64
 	pathsByInodes := make(map[uint64][]string)
+	result := make(map[string]string)
 	dirfs := os.DirFS(dir)
 	err := fs.WalkDir(dirfs, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -59,12 +59,15 @@ func TreeDump(dir string) map[string]string {
 			return fmt.Errorf("unknown file type %d: %s", ftype, fpath)
 		}
 
-		stat, ok := finfo.Sys().(*syscall.Stat_t)
-		if !ok {
-			return fmt.Errorf("cannot get syscall stat info for %q", path)
-		}
-		inode := stat.Ino
 		if ftype != fs.ModeDir {
+			stat, ok := finfo.Sys().(*syscall.Stat_t)
+			if !ok {
+				return fmt.Errorf("cannot get syscall stat info for %q", path)
+			}
+			inode := stat.Ino
+			if len(pathsByInodes[inode]) == 1 {
+				inodes = append(inodes, inode)
+			}
 			pathsByInodes[inode] = append(pathsByInodes[inode], "/"+path)
 		}
 		return nil
@@ -74,22 +77,6 @@ func TreeDump(dir string) map[string]string {
 	}
 
 	// Append identifiers to paths who share an inode e.g. hard links.
-	var inodes []uint64
-	for inode, paths := range pathsByInodes {
-		if len(paths) < 2 {
-			continue
-		}
-		inodes = append(inodes, inode)
-		// Keep the smallest path in front for easier comparison later.
-		for i := 1; i < len(paths); i++ {
-			if paths[i] < paths[0] {
-				paths[0], paths[i] = paths[i], paths[0]
-			}
-		}
-	}
-	sort.Slice(inodes, func(i, j int) bool {
-		return pathsByInodes[inodes[i]][0] < pathsByInodes[inodes[j]][0]
-	})
 	for i := 0; i < len(inodes); i++ {
 		paths := pathsByInodes[inodes[i]]
 		suff := fmt.Sprintf(" <%d>", i+1)
