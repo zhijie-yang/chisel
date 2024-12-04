@@ -1505,8 +1505,8 @@ var slicerTests = []slicerTest{{
 	`,
 	},
 	filesystem: map[string]string{
-		"/file":     "file 0644 2c26b46b",
-		"/hardlink": "file 0644 2c26b46b",
+		"/file":     "file 0644 2c26b46b <1>",
+		"/hardlink": "file 0644 2c26b46b <1>",
 	},
 	manifestPaths: map[string]string{
 		"/file":     "file 0644 2c26b46b <1> {test-package_slice1}",
@@ -1535,8 +1535,8 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/hardlink1": "file 0644 2c26b46b",
-		"/hardlink2": "file 0644 2c26b46b",
+		"/hardlink1": "file 0644 2c26b46b <1>",
+		"/hardlink2": "file 0644 2c26b46b <1>",
 	},
 	manifestPaths: map[string]string{
 		"/hardlink1": "file 0644 2c26b46b <1> {test-package_myslice}",
@@ -1566,10 +1566,10 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/file1":     "file 0644 df82bbbd",
-		"/file2":     "file 0644 dcddda2e",
-		"/hardlink1": "file 0644 df82bbbd",
-		"/hardlink2": "file 0644 dcddda2e",
+		"/file1":     "file 0644 df82bbbd <1>",
+		"/file2":     "file 0644 dcddda2e <2>",
+		"/hardlink1": "file 0644 df82bbbd <1>",
+		"/hardlink2": "file 0644 dcddda2e <2>",
 	},
 	manifestPaths: map[string]string{
 		"/file1":     "file 0644 df82bbbd <1> {test-package_myslice}",
@@ -1629,8 +1629,8 @@ var slicerTests = []slicerTest{{
 				`,
 	},
 	filesystem: map[string]string{
-		"/hardlink": "symlink ./file",
-		"/symlink":  "symlink ./file",
+		"/hardlink": "symlink ./file <1>",
+		"/symlink":  "symlink ./file <1>",
 	},
 	manifestPaths: map[string]string{
 		"/symlink":  "symlink ./file <1> {test-package_myslice}",
@@ -1676,10 +1676,10 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/file1":     "file 0644 2c26b46b",
-		"/hardlink1": "file 0644 2c26b46b",
-		"/file2":     "file 0644 2c26b46b",
-		"/hardlink2": "file 0644 2c26b46b",
+		"/file1":     "file 0644 2c26b46b <1>",
+		"/hardlink1": "file 0644 2c26b46b <1>",
+		"/file2":     "file 0644 2c26b46b <2>",
+		"/hardlink2": "file 0644 2c26b46b <2>",
 	},
 	manifestPaths: map[string]string{
 		"/file1":     "file 0644 2c26b46b <1> {test-package1_myslice}",
@@ -1735,8 +1735,8 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		"/file":     "file 0644 2c26b46b",
-		"/hardlink": "file 0644 2c26b46b",
+		"/file":     "file 0644 2c26b46b <1>",
+		"/hardlink": "file 0644 2c26b46b <1>",
 	},
 	manifestPaths: map[string]string{
 		"/file":     "file 0644 2c26b46b <1> {test-package_myslice}",

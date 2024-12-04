@@ -115,8 +115,8 @@ var createTests = []createTest{{
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	result: map[string]string{
-		"/file":     "file 0644 3a6eb079",
-		"/hardlink": "file 0644 3a6eb079",
+		"/file":     "file 0644 3a6eb079 <1>",
+		"/hardlink": "file 0644 3a6eb079 <1>",
 	},
 }, {
 	summary: "Cannot create a hard link if the link target does not exist",
@@ -144,8 +144,8 @@ var createTests = []createTest{{
 		opts.Link = filepath.Join(dir, opts.Link)
 	},
 	result: map[string]string{
-		"/file":     "file 0644 3a6eb079",
-		"/hardlink": "file 0644 3a6eb079",
+		"/file":     "file 0644 3a6eb079 <1>",
+		"/hardlink": "file 0644 3a6eb079 <1>",
 	},
 }, {
 	summary: "Cannot create a hard link if file exists but differs",

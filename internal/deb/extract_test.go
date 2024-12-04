@@ -369,8 +369,8 @@ var extractTests = []extractTest{{
 		},
 	},
 	result: map[string]string{
-		"/file":     "file 0644 28121945",
-		"/hardlink": "file 0644 28121945",
+		"/file":     "file 0644 28121945 <1>",
+		"/hardlink": "file 0644 28121945 <1>",
 	},
 	notCreated: []string{},
 }, {
@@ -437,8 +437,8 @@ var extractTests = []extractTest{{
 		},
 	},
 	result: map[string]string{
-		"/hardlink": "symlink ./file",
-		"/symlink":  "symlink ./file",
+		"/hardlink": "symlink ./file <1>",
+		"/symlink":  "symlink ./file <1>",
 	},
 	notCreated: []string{},
 }, {
