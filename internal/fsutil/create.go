@@ -48,7 +48,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 
 	var err error
 	var hash string
-	var linkType bool
+	var hardLink bool
 	if o.MakeParents {
 		if err := os.MkdirAll(filepath.Dir(o.Path), 0755); err != nil {
 			return nil, err
@@ -58,10 +58,8 @@ func Create(options *CreateOptions) (*Entry, error) {
 	switch o.Mode & fs.ModeType {
 	case 0:
 		if o.Link != "" {
-			// Creating the hard link does not involve reading the file.
-			// Therefore, its size and hash is not calculated here.
 			err = createHardLink(o)
-			linkType = true
+			hardLink = true
 		} else {
 			err = createFile(o)
 			hash = hex.EncodeToString(rp.h.Sum(nil))
@@ -82,7 +80,6 @@ func Create(options *CreateOptions) (*Entry, error) {
 		return nil, err
 	}
 	mode := s.Mode()
-	// Overrides mode if the entry is not a link and the mode differs.
 	if o.OverrideMode && mode != o.Mode && o.Link == "" {
 		err := os.Chmod(o.Path, o.Mode)
 		if err != nil {
@@ -97,7 +94,7 @@ func Create(options *CreateOptions) (*Entry, error) {
 		SHA256:   hash,
 		Size:     rp.size,
 		Link:     o.Link,
-		HardLink: linkType,
+		HardLink: hardLink,
 	}
 	return entry, nil
 }
