@@ -86,47 +86,12 @@ func Extract(pkgReader io.ReadSeeker, options *ExtractOptions) (err error) {
 	return extractData(pkgReader, validOpts)
 }
 
-func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
-	arReader := ar.NewReader(pkgReader)
-	var dataReader io.ReadCloser
-	for dataReader == nil {
-		arHeader, err := arReader.Next()
-		if err == io.EOF {
-			return nil, fmt.Errorf("no data payload")
-		}
-		if err != nil {
-			return nil, err
-		}
-		switch arHeader.Name {
-		case "data.tar.gz":
-			gzipReader, err := gzip.NewReader(arReader)
-			if err != nil {
-				return nil, err
-			}
-			dataReader = gzipReader
-		case "data.tar.xz":
-			xzReader, err := xz.NewReader(arReader)
-			if err != nil {
-				return nil, err
-			}
-			dataReader = io.NopCloser(xzReader)
-		case "data.tar.zst":
-			zstdReader, err := zstd.NewReader(arReader)
-			if err != nil {
-				return nil, err
-			}
-			dataReader = zstdReader.IOReadCloser()
-		}
-	}
-
-	return dataReader, nil
-}
-
 func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	dataReader, err := getDataReader(pkgReader)
 	if err != nil {
 		return err
 	}
+	defer dataReader.Close()
 
 	oldUmask := syscall.Umask(0)
 	defer func() {
@@ -160,7 +125,6 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 	// not for all tarballs.
 	tarDirMode := make(map[string]fs.FileMode)
 	tarReader := tar.NewReader(dataReader)
-	defer dataReader.Close()
 	for {
 		tarHeader, err := tarReader.Next()
 		if err == io.EOF {
@@ -275,41 +239,28 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 			}
 			err := options.Create(extractInfos, createOptions)
 			if err != nil && os.IsNotExist(err) && tarHeader.Typeflag == tar.TypeLink {
-				// This means that the hard link target file has not been
-				// extracted. Add this hard link entry to the pending list
-				// to extract later.
-				basePath := sanitizeTarPath(tarHeader.Linkname)
+				// The hard link could not be created because the content
+				// was not extracted previously. Add this hard link entry
+				// to the pending list to extract later.
+				relLinkPath := sanitizeTarPath(tarHeader.Linkname)
 				info := pendingHardLink{
-					link:         targetPath,
+					path:         targetPath,
 					extractInfos: extractInfos,
 				}
-				pendingHardLinks[basePath] = append(pendingHardLinks[basePath], info)
+				pendingHardLinks[relLinkPath] = append(pendingHardLinks[relLinkPath], info)
 			} else if err != nil {
 				return err
 			}
 		}
 	}
 
-	// Go over the tarball again to textract the pending hard links.
 	if len(pendingHardLinks) > 0 {
-		offset, err := pkgReader.Seek(0, io.SeekStart)
-		if err != nil {
-			return err
-		}
-		if offset != 0 {
-			return fmt.Errorf("internal error: cannot seek to the beginning of the package")
-		}
-		dataReader2, err := getDataReader(pkgReader)
-		if err != nil {
-			return err
-		}
-		defer dataReader2.Close()
-		tarReader := tar.NewReader(dataReader2)
+		// Go over the tarball again to textract the pending hard links.
 		extractHardLinkOptions := &extractHardLinkOptions{
 			ExtractOptions: options,
 			pendingLinks:   pendingHardLinks,
 		}
-		err = extractHardLinks(tarReader, extractHardLinkOptions)
+		err = extractHardLinks(pkgReader, extractHardLinkOptions)
 		if err != nil {
 			return err
 		}
@@ -332,7 +283,7 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 }
 
 type pendingHardLink struct {
-	link         string
+	path         string
 	extractInfos []ExtractInfo
 }
 
@@ -343,7 +294,21 @@ type extractHardLinkOptions struct {
 
 // extractHardLinks iterates through the tarball a second time to extract the
 // hard links that were not extracted in the first pass.
-func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error {
+func extractHardLinks(pkgReader io.ReadSeeker, opts *extractHardLinkOptions) error {
+	offset, err := pkgReader.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+	if offset != 0 {
+		return fmt.Errorf("internal error: cannot seek to the beginning of the package")
+	}
+	dataReader, err := getDataReader(pkgReader)
+	if err != nil {
+		return err
+	}
+	defer dataReader.Close()
+
+	tarReader := tar.NewReader(dataReader)
 	for {
 		tarHeader, err := tarReader.Next()
 		if err == io.EOF {
@@ -363,13 +328,12 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 			continue
 		}
 
-		// For a target path, the first hard link will be created as a file with the
-		// exact content of the target path. If there are more than one hard link
-		// pointing to the target path, the remaining links will be created as hard
-		// links with the newly created file as their target.
-		relLink := links[0].link
-		absLink := filepath.Join(opts.TargetDir, relLink)
-		// Write the content for the first file in the hard link group
+		// For a target path, the first hard link will be created as a file
+		// with the content of the target path. If there are more pending hard
+		// links, the remaining ones links will be created as hard links with
+		// the newly created file as their target.
+		absLink := filepath.Join(opts.TargetDir, links[0].path)
+		// Extract the content to the first hard link path.
 		createOptions := &fsutil.CreateOptions{
 			Path: absLink,
 			Mode: tarHeader.FileInfo().Mode(),
@@ -383,7 +347,7 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 		// Create the remaining hard links.
 		for _, link := range links[1:] {
 			createOptions := &fsutil.CreateOptions{
-				Path: filepath.Join(opts.TargetDir, link.link),
+				Path: filepath.Join(opts.TargetDir, link.path),
 				Mode: tarHeader.FileInfo().Mode(),
 				// Link to the first file extracted for the hard links.
 				Link: absLink,
@@ -402,7 +366,7 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 		var sLinks []string
 		for target, links := range opts.pendingLinks {
 			for _, link := range links {
-				sLinks = append(sLinks, link.link+": no content at "+target)
+				sLinks = append(sLinks, fmt.Sprintf("%s no content at %s", link.path, target))
 			}
 		}
 		if len(sLinks) == 1 {
@@ -413,6 +377,42 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 	}
 
 	return nil
+}
+
+func getDataReader(pkgReader io.ReadSeeker) (io.ReadCloser, error) {
+	arReader := ar.NewReader(pkgReader)
+	var dataReader io.ReadCloser
+	for dataReader == nil {
+		arHeader, err := arReader.Next()
+		if err == io.EOF {
+			return nil, fmt.Errorf("no data payload")
+		}
+		if err != nil {
+			return nil, err
+		}
+		switch arHeader.Name {
+		case "data.tar.gz":
+			gzipReader, err := gzip.NewReader(arReader)
+			if err != nil {
+				return nil, err
+			}
+			dataReader = gzipReader
+		case "data.tar.xz":
+			xzReader, err := xz.NewReader(arReader)
+			if err != nil {
+				return nil, err
+			}
+			dataReader = io.NopCloser(xzReader)
+		case "data.tar.zst":
+			zstdReader, err := zstd.NewReader(arReader)
+			if err != nil {
+				return nil, err
+			}
+			dataReader = zstdReader.IOReadCloser()
+		}
+	}
+
+	return dataReader, nil
 }
 
 func parentDirs(path string) []string {

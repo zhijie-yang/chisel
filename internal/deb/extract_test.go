@@ -355,7 +355,7 @@ var extractTests = []extractTest{{
 	},
 	error: `cannot extract from package "test-package": path /dir/ requested twice with diverging mode: 0777 != 0000`,
 }, {
-	summary: "Single hard link entry can be extracted with the target file",
+	summary: "Single hard link entry can be extracted with the content entry",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
@@ -374,7 +374,7 @@ var extractTests = []extractTest{{
 	},
 	notCreated: []string{},
 }, {
-	summary: "Single hard link entry can be extracted without the target file",
+	summary: "Single hard link entry can be extracted without the content entry",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Reg(0644, "./file", "text for file"),
@@ -404,7 +404,7 @@ var extractTests = []extractTest{{
 			}},
 		},
 	},
-	error: `cannot extract from package "test-package": cannot create hard link: /hardlink: no content at /non-existing-target`,
+	error: `cannot extract from package "test-package": cannot create hard link: /hardlink no content at /non-existing-target`,
 }, {
 	summary: "Multiple dangling hard links",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
@@ -420,10 +420,10 @@ var extractTests = []extractTest{{
 		},
 	},
 	error: `cannot extract from package "test-package": cannot create hard links:` +
-		`\n- /hardlink1: no content at /non-existing-target` +
-		`\n- /hardlink2: no content at /non-existing-target`,
+		`\n- /hardlink1 no content at /non-existing-target` +
+		`\n- /hardlink2 no content at /non-existing-target`,
 }, {
-	summary: "Hard link follows the symlink",
+	summary: "Hard link does not follow the symlink",
 	pkgdata: testutil.MustMakeDeb([]testutil.TarEntry{
 		testutil.Dir(0755, "./"),
 		testutil.Lnk(0644, "./symlink", "./file"),
