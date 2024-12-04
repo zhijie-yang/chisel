@@ -59,9 +59,7 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	}
 
 	var hardLinkID uint64
-	sha256 := fsEntry.SHA256
-	size := fsEntry.Size
-	link := fsEntry.Link
+	fsEntryCpy := *fsEntry
 	if fsEntry.HardLink {
 		relLinkPath, _ := r.sanitizeAbsPath(fsEntry.Link, false)
 		entry, ok := r.Entries[relLinkPath]
@@ -74,20 +72,20 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 			r.Entries[relLinkPath] = entry
 		}
 		hardLinkID = entry.HardLinkID
-		sha256 = entry.SHA256
-		size = entry.Size
-		link = entry.Link
+		fsEntryCpy.SHA256 = entry.SHA256
+		fsEntryCpy.Size = entry.Size
+		fsEntryCpy.Link = entry.Link
 	}
 
 	if entry, ok := r.Entries[relPath]; ok {
-		if fsEntry.Mode != entry.Mode {
-			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntry.Mode, entry.Mode)
-		} else if link != entry.Link {
-			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, link, entry.Link)
-		} else if size != entry.Size {
-			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, size, entry.Size)
-		} else if sha256 != entry.SHA256 {
-			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, sha256, entry.SHA256)
+		if fsEntryCpy.Mode != entry.Mode {
+			return fmt.Errorf("path %s reported twice with diverging mode: 0%03o != 0%03o", relPath, fsEntryCpy.Mode, entry.Mode)
+		} else if fsEntryCpy.Link != entry.Link {
+			return fmt.Errorf("path %s reported twice with diverging link: %q != %q", relPath, fsEntryCpy.Link, entry.Link)
+		} else if fsEntryCpy.Size != entry.Size {
+			return fmt.Errorf("path %s reported twice with diverging size: %d != %d", relPath, fsEntryCpy.Size, entry.Size)
+		} else if fsEntryCpy.SHA256 != entry.SHA256 {
+			return fmt.Errorf("path %s reported twice with diverging hash: %q != %q", relPath, fsEntryCpy.SHA256, entry.SHA256)
 		}
 		entry.Slices[slice] = true
 		r.Entries[relPath] = entry
@@ -95,10 +93,10 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		r.Entries[relPath] = ReportEntry{
 			Path:       relPath,
 			Mode:       fsEntry.Mode,
-			SHA256:     sha256,
-			Size:       size,
+			SHA256:     fsEntryCpy.SHA256,
+			Size:       fsEntryCpy.Size,
 			Slices:     map[*setup.Slice]bool{slice: true},
-			Link:       link,
+			Link:       fsEntryCpy.Link,
 			HardLinkID: hardLinkID,
 		}
 	}
