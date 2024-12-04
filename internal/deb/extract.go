@@ -143,8 +143,13 @@ func extractData(pkgReader io.ReadSeeker, options *ExtractOptions) error {
 		}
 	}
 
-	// Store the hard links we cannot extract in the first iteration over the
-	// tarball. These hard link will be extracted in extractHardLinks.
+	// Store the hard links that we cannot extract when we first iterate over
+	// the tarball.
+	//
+	// This happens because the tarball only stores the contents once in the
+	// first entry and the rest of them point to the first one. Therefore, we
+	// cannot tell whether we need to extract the content until after we get to
+	// a hard link. In this case, we need a second pass.
 	pendingHardLinks := make(map[string][]pendingHardLink)
 
 	// When creating a file we will iterate through its parent directories and
@@ -338,9 +343,6 @@ type extractHardLinkOptions struct {
 
 // extractHardLinks iterates through the tarball a second time to extract the
 // hard links that were not extracted in the first pass.
-// The first hard link for each link target is extracted as a file with identical
-// content to the link target, and the rest of the hard links are created as hard
-// links to the first file extracted.
 func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error {
 	for {
 		tarHeader, err := tarReader.Next()
@@ -361,6 +363,10 @@ func extractHardLinks(tarReader *tar.Reader, opts *extractHardLinkOptions) error
 			continue
 		}
 
+		// For a target path, the first hard link will be created as a file with the
+		// exact content of the target path. If there are more than one hard link
+		// pointing to the target path, the remaining links will be created as hard
+		// links with the newly created file as their target.
 		relLink := links[0].link
 		absLink := filepath.Join(opts.TargetDir, relLink)
 		// Write the content for the first file in the hard link group
