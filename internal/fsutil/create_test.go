@@ -285,17 +285,18 @@ func (s *S) TestCreate(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(testutil.TreeDump(dir), DeepEquals, test.result)
 
-		// [fsutil.Create] does not return information about parent directories
-		// created implicitly. We only check for the requested path.
 		if entry.HardLink {
-			// We should test hard link entries differently to ensure that it
-			// produces a hard link indeed.
+			// We should test hard link entries differently because
+			// fsutil.Create does not return hash or size when it creates hard
+			// links.
 			pathInfo, err := os.Lstat(entry.Path)
 			c.Assert(err, IsNil)
 			linkInfo, err := os.Lstat(entry.Link)
 			c.Assert(err, IsNil)
 			os.SameFile(pathInfo, linkInfo)
 		} else {
+			// [fsutil.Create] does not return information about parent directories
+			// created implicitly. We only check for the requested path.
 			entry.Path = strings.TrimPrefix(entry.Path, dir)
 			// Add the slashes that TreeDump adds to the path.
 			slashPath := "/" + test.options.Path
