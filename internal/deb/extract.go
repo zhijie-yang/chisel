@@ -363,17 +363,18 @@ func extractHardLinks(pkgReader io.ReadSeeker, opts *extractHardLinkOptions) err
 	// If there are pending links, that means the link targets do not come from
 	// this package.
 	if len(opts.pendingLinks) > 0 {
-		var sLinks []string
+		var errs []string
 		for target, links := range opts.pendingLinks {
 			for _, link := range links {
-				sLinks = append(sLinks, fmt.Sprintf("%s no content at %s", link.path, target))
+				errs = append(errs, fmt.Sprintf("cannot create hard link %s: no content at %s",
+					link.path, target))
 			}
 		}
-		if len(sLinks) == 1 {
-			return fmt.Errorf("cannot create hard link: %s", sLinks[0])
+		if len(errs) == 1 {
+			return fmt.Errorf("%s", errs[0])
 		}
-		sort.Strings(sLinks)
-		return fmt.Errorf("cannot create hard links:\n- %s", strings.Join(sLinks, "\n- "))
+		sort.Strings(errs)
+		return fmt.Errorf("\n- %s", strings.Join(errs, "\n- "))
 	}
 
 	return nil
