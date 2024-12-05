@@ -328,10 +328,10 @@ func extractHardLinks(pkgReader io.ReadSeeker, opts *extractHardLinkOptions) err
 			continue
 		}
 
-		// For a target path, the first hard link will be created as a file
-		// with the content of the target path. If there are more pending hard
-		// links, the remaining ones links will be created as hard links with
-		// the newly created file as their target.
+		// For a target path, the first hard link will be created as a file with
+		// the content of the target path. If there are more pending hard links,
+		// the remaining ones will be created as hard links with the newly
+		// created file as their target.
 		absLink := filepath.Join(opts.TargetDir, links[0].path)
 		// Extract the content to the first hard link path.
 		createOptions := &fsutil.CreateOptions{
