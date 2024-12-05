@@ -23,16 +23,16 @@ func TreeDump(dir string) map[string]string {
 		if path == "." {
 			return nil
 		}
+		fpath := filepath.Join(dir, path)
 		finfo, err := d.Info()
 		if err != nil {
-			return fmt.Errorf("cannot get stat info for %q: %w", path, err)
+			return fmt.Errorf("cannot get stat info for %q: %w", fpath, err)
 		}
 		fperm := finfo.Mode() & fs.ModePerm
 		ftype := finfo.Mode() & fs.ModeType
 		if finfo.Mode()&fs.ModeSticky != 0 {
 			fperm |= 01000
 		}
-		fpath := filepath.Join(dir, path)
 		var resultEntry string
 		switch ftype {
 		case fs.ModeDir:
@@ -66,7 +66,7 @@ func TreeDump(dir string) map[string]string {
 		if ftype != fs.ModeDir {
 			stat, ok := finfo.Sys().(*syscall.Stat_t)
 			if !ok {
-				return fmt.Errorf("cannot get syscall stat info for %q", path)
+				return fmt.Errorf("cannot get syscall stat info for %q", fpath)
 			}
 			inode := stat.Ino
 			if len(pathsByInodes[inode]) == 1 {
