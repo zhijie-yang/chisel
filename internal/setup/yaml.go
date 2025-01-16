@@ -170,11 +170,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		return nil, fmt.Errorf("%s: v2-archives is only supported in format v1", fileName)
 	}
 
-	numArchives := len(yamlVar.Archives)
-	if yamlVar.Format == "v1" {
-		numArchives += len(yamlVar.V2Archives)
-	}
-	if numArchives == 0 {
+	if len(yamlVar.Archives)+len(yamlVar.V2Archives) == 0 {
 		return nil, fmt.Errorf("%s: no archives defined", fileName)
 	}
 
