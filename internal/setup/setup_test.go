@@ -2021,62 +2021,6 @@ var setupTests = []setupTest{{
 	},
 	relerror: `chisel.yaml: archive "ubuntu" defined twice`,
 }, {
-	summary: "Format v2 is supported",
-	input: map[string]string{
-		"chisel.yaml": `
-			format: v2
-			archives:
-				ubuntu:
-					version: 20.04
-					components: [main]
-					suites: [focal]
-					priority: 10
-					public-keys: [test-key]
-				fips:
-					version: 20.04
-					components: [main]
-					suites: [focal]
-					pro: fips
-					priority: 20
-					public-keys: [test-key]
-			public-keys:
-				test-key:
-					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
-		`,
-		"slices/mydir/mypkg.yaml": `
-			package: mypkg
-		`,
-	},
-	release: &setup.Release{
-		Archives: map[string]*setup.Archive{
-			"ubuntu": {
-				Name:       "ubuntu",
-				Version:    "20.04",
-				Suites:     []string{"focal"},
-				Components: []string{"main"},
-				Priority:   10,
-				PubKeys:    []*packet.PublicKey{testKey.PubKey},
-			},
-			"fips": {
-				Name:       "fips",
-				Version:    "20.04",
-				Suites:     []string{"focal"},
-				Components: []string{"main"},
-				Pro:        "fips",
-				Priority:   20,
-				PubKeys:    []*packet.PublicKey{testKey.PubKey},
-			},
-		},
-		Packages: map[string]*setup.Package{
-			"mypkg": {
-				Name:   "mypkg",
-				Path:   "slices/mydir/mypkg.yaml",
-				Slices: map[string]*setup.Slice{},
-			},
-		},
-	},
-}, {
 	summary: "Format v2 does not support default",
 	input: map[string]string{
 		"chisel.yaml": `
@@ -2156,6 +2100,20 @@ func (s *S) TestParseRelease(c *C) {
 		v2ArchiveTests = append(v2ArchiveTests, t)
 	}
 	runParseReleaseTests(c, v2ArchiveTests)
+
+	v2FormatTests := make([]setupTest, 0, len(setupTests))
+	for _, t := range setupTests {
+		m := make(map[string]string)
+		for k, v := range t.input {
+			if strings.Contains(v, "format: v1") && !strings.Contains(v, "v2-archives:") && !strings.Contains(v, "default: true") {
+				v = strings.Replace(v, "format: v1", "format: v2", -1)
+			}
+			m[k] = v
+		}
+		t.input = m
+		v2FormatTests = append(v2FormatTests, t)
+	}
+	runParseReleaseTests(c, v2FormatTests)
 }
 
 func runParseReleaseTests(c *C, tests []setupTest) {
