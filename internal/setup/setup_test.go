@@ -2105,7 +2105,9 @@ func (s *S) TestParseRelease(c *C) {
 	for _, t := range setupTests {
 		m := make(map[string]string)
 		for k, v := range t.input {
-			if strings.Contains(v, "format: v1") && !strings.Contains(v, "v2-archives:") && !strings.Contains(v, "default: true") {
+			if strings.Contains(v, "format: v1") &&
+				!strings.Contains(v, "v2-archives:") &&
+				!strings.Contains(v, "default: true") {
 				v = strings.Replace(v, "format: v1", "format: v2", -1)
 			}
 			m[k] = v
