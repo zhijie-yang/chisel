@@ -2101,7 +2101,7 @@ func (s *S) TestParseRelease(c *C) {
 	}
 	runParseReleaseTests(c, v2ArchiveTests)
 
-	// Translate valid existing test cases to "v2" format.
+	// Run tests for "v2" format.
 	v2FormatTests := make([]setupTest, 0, len(setupTests))
 	for _, t := range setupTests {
 		m := make(map[string]string)

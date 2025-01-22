@@ -1777,7 +1777,7 @@ func (s *S) TestRun(c *C) {
 	}
 	runSlicerTests(c, v2ArchiveTests)
 
-	// Translate valid existing test cases to "v2" format.
+	// Run tests for "v2" format.
 	v2FormatTests := make([]slicerTest, 0, len(slicerTests))
 	for _, t := range slicerTests {
 		m := make(map[string]string)
