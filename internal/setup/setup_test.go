@@ -2042,7 +2042,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: archive "ubuntu" has 'default' field, which is only supported in format v1`,
+	relerror: `chisel.yaml: archive "ubuntu" has 'default' field, which is deprecated since format v2`,
 }, {
 	summary: "Format v2 does not support v2-archives",
 	input: map[string]string{
@@ -2065,7 +2065,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: v2-archives is only supported in format v1`,
+	relerror: `chisel.yaml: v2-archives is deprecated since format v2`,
 }}
 
 var defaultChiselYaml = `
