@@ -206,7 +206,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 	var archiveNoPriority string
 	for archiveName, details := range yamlArchives {
 		if yamlVar.Format != "v1" && details.Default {
-			return nil, fmt.Errorf("%s: archive %q has 'default' field, which is deprecated since format v2", fileName, archiveName)
+			return nil, fmt.Errorf("%s: archive %q has 'default' field which is deprecated since format v2", fileName, archiveName)
 		}
 		if details.Version == "" {
 			return nil, fmt.Errorf("%s: archive %q missing version field", fileName, archiveName)
